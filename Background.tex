@@ -1,0 +1,47 @@
+\section{Background}
+
+\subsection{Markov Decision Process}
+
+A \emph{Markov Decision Process} (MDP) is a specification of a sequential decision process in a fully observable environment with three components: the initial state, the transition model, and the reward function. An MDP can be represented by the 5-tuple $(\mathcal{S, A, P}, R, \gamma)$ where: $\mathcal{S} = \{s_1, s_2, ..., s_n\}$ is a finite set of states; $\mathcal{A} = \{a_1, a_2, ..., a_m\}$ is a finite set of actions; $\mathcal{P}$ is a Markovian transition model and $\mathcal{P}(s, a, s')$ is the probability of making a transition to state $s'$ when taking action $a$ while in state $s$; $R$ is a reward or cost function such that $R(s, a, s')$ is the reward for the transition represented by $(s, a, s')$; and $\gamma \in [0, 1)$ is the discount factor for future rewards. Using this definition we can describe the expected reward for a given state-action pair $(s, a)$:
+
+\[
+		\mathcal{R}(s, a) = \sum_{s' \in \mathcal{S}} \mathcal{P}(s, a, s')R(s, a, s')
+\]
+
+The solution to an MDP is defined as the policy, denoted by $\pi$. Given the stochastic nature of an MDP, a given policy is rated based on the expected utility of actions selected by the policy. The optimal policy for a given MDP is the policy which yields the highest expected utility and is denoted by $\pi^*$. An agent following policy $\pi^*$ acts by determining the current state $s$, and executing the action specified by $\pi^*(s)$.
+
+When defining the expected utility of an MDP, the horizon must first be described as finite or infinite. A finite horizon occurs when there is a fixed time $N$ after which actions have no effect on reward or cost. An infinite horizon does not have any fixed limitation. This does not mean that state sequences are infinite, only that there is no fixed deadline. With an infinite horizon the optimal policy is stationary; that is, given state $s$ is the current state the optimal action is $\pi^*(s)$, regardless of the time. With a finite horizon the optimal policy changes over time and is described as nonstationary. For the remainder of this paper all MDPs will be assumed to have an infinite horizon.
+
+Given an MDP with infinite horizon the utility of a state sequence can be defined as either additive or discounted. For additive rewards the utility of a state sequence is:
+
+\[
+		\mathcal{U}_h([s_0,s_1,s_2,...]) = R(s_0) + R(s_1) + R(s_2) + ...
+\]
+
+For discounted rewards the utility of a state sequence is:
+
+\[
+		\mathcal{U}_h([s_0,s_1,s_2,...]) = R(s_0) + \gamma R(s_1) + \gamma^2 R(s_2) + ...
+\]
+
+The discount factor $\gamma$ is defined as a number between $0$ and $1$. From this it is clear that additive rewards is a special case of discounted rewards with $\gamma = 1$.  Note that as $\gamma$ approaches $0$, the utility function becomes weighted toward immediate rewards and as $\gamma$ approaches $1$ the utility function becomes weighted toward long term rewards. For the remainder of this paper all MDPs will be assumed to use discounted rewards with $\gamma \in [0, 1)$, precluding additive rewards.
+
+\subsection{Reinforcement Learning and Policy Iteration}
+
+Reinforcement learning describes a process of learning through reinforcement. This is akin to a process of trial and error, by which an agent will tend to repeat actions which result in a high reward and avoid actions which have a high cost. 
+
+\subsubsection{Online vs Offline Reinforcement Learning}
+
+\subsection{Policy Gradient}
+
+\subsection{Least-Squares Policy Iteration}
+
+\subsection{Artificial Intelligence in Video Games}
+
+\subsubsection{Scripting}
+
+\subsubsection{Dynamic Planning}
+
+\subsubsection{Quake III Bots}
+
+\subsection{CUDA Architecture}
