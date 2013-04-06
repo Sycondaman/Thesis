@@ -1,24 +1,138 @@
-\documentclass{article}
+%=====================================================================
+% Document Style
+%=====================================================================
+% Choose only one of the following document classes:
+%
+% for a 12 Point UW PhD Thesis without Margin Check
+% \documentclass[12pt]{withesis}
+%
+% for a 10 Point UW PhD Thesis with Margin Check
+%\documentclass[10pt,margincheck]{withesis}
+%
+% The margincheck option flags lines which overflow their hbox with a black
+%  box at the end of the line.  This usually (but not always) indicates a
+%  margin violation on the right margin.  Left margin violations aren't
+%  indicated and if the margin violation is large enough, there isn't room
+%  for the black box to be visiable.  
+%
+% This option can be also used in conjunction with the msthesis option.
+%
+% or for a 12 Point UW Masters Thesis
+\documentclass[12pt,msthesis]{withesis}
+%
+% or for a 10 Point UW Masters Thesis
+%\documentclass[10pt,msthesis]{withesis}
+%
+% The msthesis option changes the page margins from 1" all around
+% (the PhD format) to 1.25" left and 1" remaining margins (MS format).
+% The defaults for degree and thesis are changed to be MS and thesis.
+% These defaults can be overridden if the margins for the MS thesis
+% are desired for other documents.
+
+% To include optional packages, use the \usepackage command.
+%  The package epsfig is used to bring in the Encapsulated PostScript
+%    figures into the document.
+%  The package times is used to change the fonts to Times Roman; however
+%    because the times typewriter font looks odd, the original LaTeX
+%    Computer Modern font is kept for the typewriter font using
+%      \renewcommand{\ttdefault}{cmtt}
+%    Note that Times Roman is a PostScript font and therefore, the document
+%    cannot be correctly viewed from the *.dvi file.  It should be converted
+%    to a *.ps file first and then viewed with a PostScript previewer...
 
 \usepackage[margin=1in]{geometry}     % set the margins to 1in on all sides
 \usepackage{graphicx}             		 % to include figures
 \usepackage{amsmath}               		 % great math stuff
-\usepackage{amsfonts}              	            % for blackboard bold, etc
+\usepackage{amsfonts}              	   % for blackboard bold, etc
 \usepackage{amsthm}                		 % better theorem environments
+\usepackage{times}
+\usepackage{epsfig}
+\usepackage{multirow}
+\renewcommand{\ttdefault}{cmtt}
+
+\renewcommand{\topfraction}{0.9}	% max fraction of floats at top
+    \renewcommand{\bottomfraction}{0.8}	% max fraction of floats at bottom
+    %   Parameters for TEXT pages (not float pages):
+    \setcounter{topnumber}{2}
+    \setcounter{bottomnumber}{2}
+    \setcounter{totalnumber}{4}     % 2 may work better
+    \setcounter{dbltopnumber}{2}    % for 2-column pages
+    \renewcommand{\dbltopfraction}{0.9}	% fit big float above 2-col. text
+    \renewcommand{\textfraction}{0.07}	% allow minimal text w. figs
+    %   Parameters for FLOAT pages (not text pages):
+    \renewcommand{\floatpagefraction}{0.7}	% require fuller float pages
+	% N.B.: floatpagefraction MUST be less than topfraction !!
+    \renewcommand{\dblfloatpagefraction}{0.7}	% require fuller float pages
+
+%========================================================================
+%  Draft Control Commands:
+%========================================================================
+%
+% \psdraft causes the \psfig or \epsfig commands to draw a box and label
+% the box with the postscript file name instead of reading in the full
+% postscript figure.  This can save time and toner when printing drafts.
+%
+%\psdraft
+%
+%
+% \psfull causes the inclusion of the postscript figures.
+%\psfull
+%
+%
+%\pagestyle{thesisdraft} causes the footer text to become:
+% DRAFT: Do Not Distribute        <time><Date>        <input file name>
+%
+%\pagestyle{thesisdraft}
+%
+%\pagestyle{thesis} causes the header and footers to be the correct format
+%
+\pagestyle{thesisdraft}
+%
+%
+%  The page margins can be marked with a post-script box using the
+%  \draftmargins command.  This command uses dvips's end-of-page hook
+%  This is only visible in the *.ps file (NOT the *.dvi file)!
+%
+%\draftmargins
+%
+%
+%  The word ``DRAFT'' can be diagonally printed across the page using
+%  the \draftscreen command.  This command uses dvip's beginning-of-page
+%  hook.  This is only visible in the *.ps file (NOT the *.dvi file)!
+%	
+%\draftscreen
+
+
+%=======================================================================
+% Remove the following lines if appendix tables or figures are present.
+% The suppress writing the auxiliary information which appears in the
+% list of tables or list of figures.
+%
+%\noappendixtables                % Don't have appendix tables
+%\noappendixfigures               % Don't have appendix figures
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmax}{max}
+
+%=======================================================================
+% End of Preamble, start of document
+%
+
 
 \begin{document}
-		\include{Title_Page}
-		\include{Committee_Approval}
-		\include{Table_of_Contents}
-		\include{List_of_Tables}
-		\include{List_of_Figures}
-		\include{Acknowledgements}
-		\include{Glossary}
-		\include{Abstract}
 
-		\include{Introduction}
-		\include{Background}
+	% Choose your bibliography style
+	% plain is the basic style, others include ieeetr, siam, asm, etc
+	\bibliographystyle{ieeetr}
 
-		\include{Appendix}
-		\include{Bibliography}
+	\include{Preamble}
+	
+	\include{Introduction}
+	\include{Background}
+	\include{Implementation}
+	\include{Experiment}
+	\include{Results}
+	
+	\include{Appendix}
+	\bibliography{refs}
 \end{document}
