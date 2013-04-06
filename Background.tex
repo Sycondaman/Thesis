@@ -60,13 +60,15 @@ By removing the max operator, the optimal policy can now be determined using lin
 
 \subsection{Reinforcement Learning}
 
-In practical control problems it is often the case that a complete model of the underlying MDP is not available.
+In practical control problems it is often the case that a complete model of the underlying MDP is not available. Most commonly, the transition model and reward function are unknown. To solve these problems it is beneficial to have agents which can learn optimal policies through the process of reinforcement learning. A typical reinforcement agent will generate a policy by acting within the environment and use positive and negative outcomes to reinforce good policy decisions and avoid bad policy decisions.
 
-\subsubsection{Online vs Offline Reinforcement Learning}
+The observations of an agent acting an environment can be organized in tuples referred to as samples: $(s, a, r, s')$. This sample layout means the agent was in state $s$, took action $a$, received reward $r$, and ended up in state $s'$. These samples can be collected by interacting with the environment or by using a generative model of the environment. Some reinforcement learning algorithms also support policy generation by collecting samples from multiple agents or generative models.
 
-\subsection{Policy Gradient}
+\subsubsection{Online and Offline Reinforcement Learning}
 
 \subsection{Least-Squares Policy Iteration}
+
+\subsection{Policy Gradient}
 
 \subsection{Artificial Intelligence in Video Games}
 
