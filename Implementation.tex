@@ -1,0 +1,114 @@
+\chapter{Implementation}
+
+\section{Least-Squares Policy Iteration}
+
+Least-Squares Policy Iteration (LSPI) is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr. LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step. LSTD$Q$ stands for Least-Squares Temporal-Difference Learning for the State-Action Value Function; in other words, it is a least-squares temporal difference algorithm for learning $\hat{Q}^\pi$, the least-squares fixed-point approximation to the sate-action value function, $Q^\pi$.
+
+LSPI uses a linear architecture for $\hat{Q}^\pi$, which means the values are approximated using a linear combination of $k$ basis functions, commonly referred to as features:
+
+\[
+    \hat{Q}^\pi(s,a;w) = \sum_{j=1}^k \phi_j(s,a)w_j
+\]
+
+In this formula, $\phi(s,a)$ is a fixed function of $s$ and $a$ and $w_j$ represents the weight for $\phi_j$. We can represent $\phi(s,a)$ as a column vector with an entry for each basis function:
+
+
+\[
+    \phi(s,a) = \begin{pmatrix}
+       \phi_1(s,a) \\ \phi_2(s,a) \\ \vdots \\ \phi_k(s,a)
+    \end{pmatrix}
+\]
+
+$\hat{Q}^\pi$  can now be expressed compactly:
+
+\[
+    \hat{Q}^\pi = \Phi w^\pi
+\]
+where $w^\pi$ is a column vector with length k and $\Phi$ is a matrix of the form
+
+\[
+    \Phi = \begin{pmatrix}
+        \phi(s_1,a_1,)^T \\ \vdots \\ \phi(s,a)^T \\ \vdots \\ \phi(s_{|\mathcal{S}|},a_{|\mathcal{A}|})^T
+    \end{pmatrix}
+\]
+Each row of $\Phi$ represents the basis function values for a specific state-action pair. The basis functions are required to be linearly independent in LSPI which also means the columns of $\Phi$ are linearly independent.
+
+To find $\hat{Q}^\pi$, we force it to be a fixed point under the Bellman operator:
+
+\[
+    T_\pi\hat{Q}^\pi \approx \hat{Q}^\pi
+\]
+To ensure this is true we must project $T_\pi\hat{Q}^\pi$ to a point in the space spanned by the basis functions:
+
+\[
+    \hat{Q}^\pi = \Phi(\Phi^T\Phi)^{-1}\Phi^T(\mathcal{R} + \gamma P\Pi_\pi\hat{Q}^\pi)
+\]
+From this formula we can derive the desired solution:
+\[
+    \Phi^T(\Phi - \gamma P\Pi_\pi\Phi)w^\pi = \Phi^T\mathcal{R}
+\]
+
+To achieve the final project, we define $\mu$ as a probability distribution over $(s,a)$ and $\Delta_\mu$ as a diagonal matrix with the projection weights $\mu(s,a)$. This results in the weighted least-squares fixed-point solution:
+
+\[
+    w^\pi = (\Phi^T\Delta_\mu(\Phi - \gamma P\Pi_\pi\Phi))^{-1}\Phi^T\Delta_\mu\mathcal{R}
+\]
+
+Once again assuming there are $k$ linearly independent basis functions, learning $\hat{Q}^\pi$ is equivalent to learning the weights $w^\pi$ of $\hat{Q}^\pi = \Phi w^\pi$. The exact values can be computed by solving the linear system
+
+\[
+    Aw^\pi = b
+\]
+where
+
+\[
+    \begin{array}{rcl}
+        A &=& \Phi^T\Delta_\mu(\Phi - \gamma P\Pi_\pi\Phi) \\
+        b &=& \Phi^T\Delta_\mu\mathcal{R}
+    \end{array}
+\]
+and $\mu$ is a probability distribution over the state-action space which defines the weights of the projection. $A$ and $b$ can be learned using samples and the learned linear system can be solved for $\tilde{w}^\pi$. 
+
+The equations for $A$ and $b$ can be reduced until it is clear that $A$ is the sum of many rank one matrices of the form:
+
+\[
+    \phi(s,a)(\phi(s,a) - \gamma\phi(s',\pi(s')))^T
+\]
+and $b$ is the sum of many vectors of the form:
+
+\[
+    \phi(s,a)R(s,a,s')
+\]
+These summations are then taken over $s$, $a$, and $s'$ and weighted according to $\mu(s,a)$ and $\mathcal{P}(s,a,s')$. It is generally impractical to compute this summation over all values of $(s,a,s')$; however, samples taken from the environment can be used to obtain arbitrarily close approximations.
+
+Given a finite set of samples of the form
+
+\[
+    D = { (s_i,a_i,r_i,s_i') | i = 1,2,...,L}
+\]
+we can learn $A$ and $b$:
+
+\[
+    \begin{array}{rcl}
+        \tilde{A} &=& \frac{1}{L}\displaystyle\sum_{i=1}^L[\phi(s_i,a_i)(\phi(s_i,a_i) - \gamma\phi(s_i',\pi(s_i')))^T] \\
+        \tilde{b} &=& \frac{1}{L}\displaystyle\sum_{i=1}^L[\phi(s_i,a_i)r_i)]
+    \end{array}
+\]
+In practical computations $L$ is finite, allowing us to drop the factor $(1/L)$ since it cancels out. Because samples contribute additively an incremental update rule can be constructed:
+
+\[
+    \begin{array}{rcl}
+        \tilde{A}^{(t+1)} &=& \tilde{A}^{(t)} + \phi(s_t,a_t)(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t')))^T \\
+        \tilde{b}^{(t+1)} &=& \tilde{b}^{(t)} + \phi(s_t,a_t)r_t
+    \end{array}
+\]
+
+Using these formulas, an algorithm can be constrcuted to learn the weighted least-squares fixed-point approximation of $\hat{Q}^\pi$: LSTD$Q$. The name of this algorithm is derived due to similarities with LSTD, Least-Squares Temporal Difference Learning. With LSTD$Q$ the same set of samples $D$ can be used to learn $\hat{Q}^\pi$ of any policy as long as $\pi(s')$ exists for each $s' \in D$. Another nice feature of LSTD$Q$ is the lack of any restriction on how samples are collected. This means we can learn a policy from pre-existing samples, combine samples from multiple agents, or even take samples from user input.
+
+In terms of performance, LSTD$Q$ requires $O(k^2)$ independent of the size of the state and action spaces. Each update to the matrices $\hat{A}$ and $\hat{b}$ has a cost of $O(k^2)$ and a one-time cost of $O(k^3)$ is required to solve the system. An optimized version of LSTD$Q$ is also possible using the Sherman-Morrison formula for a recursive least-squares computation of the inverse. Let $B^{(t)}$ be the inverse of $\hat{A}^{(t)}$:
+
+\[
+    B^{(t)} = B^{(t-1)} - \frac{B^{(t-1)}\phi(s_t,a_t)\big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}}{1 + \phi(s_t,a_t) - \gamma\phi\big(s_t',\pi(s_t'))\big)^TB^{(t-1)}\phi(s_t,a_t)}
+\]
+
+\section{Policy Gradient}

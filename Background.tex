@@ -1,11 +1,11 @@
-\section{Background}
+\chapter{Background}
 
-\subsection{Markov Decision Process}
+\section{Markov Decision Process}
 
 A \emph{Markov Decision Process} (MDP) is a specification of a sequential decision process in a fully observable environment with three components: the initial state, the transition model, and the reward function. An MDP can be represented by the 5-tuple $(\mathcal{S, A, P}, R, \gamma)$ where: $\mathcal{S} = \{s_1, s_2, ..., s_n\}$ is a finite set of states; $\mathcal{A} = \{a_1, a_2, ..., a_m\}$ is a finite set of actions; $\mathcal{P}$ is a Markovian transition model and $\mathcal{P}(s, a, s')$ is the probability of making a transition to state $s'$ when taking action $a$ while in state $s$; $R$ is a reward or cost function such that $R(s, a, s')$ is the reward for the transition represented by $(s, a, s')$; and $\gamma \in [0, 1)$ is the discount factor for future rewards. Using this definition we can describe the expected reward for a given state-action pair $(s, a)$:
 
 \[
-		\mathcal{R}(s, a) = \sum_{s' \in \mathcal{S}} \mathcal{P}(s, a, s')R(s, a, s')
+    \mathcal{R}(s, a) = \sum_{s' \in \mathcal{S}} \mathcal{P}(s, a, s')R(s, a, s')
 \]
 
 The solution to an MDP is defined as the policy, denoted by $\pi$. Given the stochastic nature of an MDP, a given policy is rated based on the expected utility of actions selected by the policy. The optimal policy for a given MDP is the policy which yields the highest expected utility and is denoted by $\pi^*$. An agent following policy $\pi^*$ acts by determining the current state $s$, and executing the action specified by $\pi^*(s)$.
@@ -15,37 +15,37 @@ When defining the expected utility of an MDP, the horizon must first be describe
 Given an MDP with infinite horizon the utility of a state sequence can be defined as either additive or discounted. For additive rewards the utility of a state sequence is:
 
 \[
-		U_h([s_0,s_1,s_2,...]) = R(s_0) + R(s_1) + R(s_2) + ...
+    U_h([s_0,s_1,s_2,...]) = R(s_0) + R(s_1) + R(s_2) + ...
 \]
 
 For discounted rewards the utility of a state sequence is:
 
 \[
-		U_h([s_0,s_1,s_2,...]) = R(s_0) + \gamma R(s_1) + \gamma^2 R(s_2) + ...
+    U_h([s_0,s_1,s_2,...]) = R(s_0) + \gamma R(s_1) + \gamma^2 R(s_2) + ...
 \]
 
 The discount factor $\gamma$ is defined as a number between $0$ and $1$. From this it is clear that additive rewards is a special case of discounted rewards with $\gamma = 1$.  Note that as $\gamma$ approaches $0$, the utility function becomes weighted toward immediate rewards and as $\gamma$ approaches $1$ the utility function becomes weighted toward long term rewards. For the remainder of this paper all MDPs will be assumed to use discounted rewards with $\gamma \in [0, 1)$, precluding additive rewards.
 
-\subsection{Policy Iteration}
+\section{Policy Iteration}
 
 Given a complete model of an MDP it is possible to use the policy iteration algorithm to determine an optimal policy. The policy iteration algorithm requires some initial policy $\pi_0$ followed by the repeated iteration of two steps: policy evaluation and policy improvement. Policy evaluation calculates the utility of policy $\pi_i$ such that $U_i = U^{\pi_i}$. Policy improvement computes a new policy based on $U_i$ in an attempt to improve on policy $\pi_i$. These two steps are repeated until the policy improvement step no longer yields a change in the utilities: $U_i \approx U_{i+1}$. 
 
 To confirm that this results in an optimal policy, we must examine how the utility function is generated during each iteration. Assuming the goal is to maximize the utility, the optimal policy can be defined using the following function over the state space:
 
 \[
-		\pi^*(s) = \argmax_a \sum_{s'} T(s,a,s')U(s')
+    \pi^*(s) = \argmax_a \sum_{s'} T(s,a,s')U(s')
 \]
 
 The utility of a single state is defined by the Bellman equation:
 
 \[
-		U(s) = R(s) + \gamma \max_a \sum_{s'}T(s,a,s')U(s')
+    U(s) = R(s) + \gamma \max_a \sum_{s'}T(s,a,s')U(s')
 \]
 
 This function is derived from the idea that the utility of each state is equivalent to the reward at that state plus the sum of the discounted rewards of all following states, assuming an optimal policy. For a given MDP, there are $n$ Bellman equations, $n$ states, and $n$ unknowns (the utilities of the states). Solving the Bellman equations provides an optimal policy; however, solving these non-linear equations is a very slow process. One possible solution is to use an iterative approaching using the Bellman update:
 
 \[
-		U_{i+1}(s) \gets R(S) + \gamma \max_a \sum_{s'}T(s,a,s')U_i(s')
+    U_{i+1}(s) \gets R(S) + \gamma \max_a \sum_{s'}T(s,a,s')U_i(s')
 \]
 
 The utility function $U_i$ which results from policy iteration is a fixed point of the Bellman update, which means it is a solution to the Bellman equations and thus $\pi_i$ must be an optimal policy.
@@ -53,29 +53,31 @@ The utility function $U_i$ which results from policy iteration is a fixed point 
 To perform the policy evaluation step we can use a simplified version of the Bellman equation:
 
 \[
-		U_i(s) = R(s) + \gamma \sum_{s'} T(s, \pi_i(s), s')U_i(s')
+    U_i(s) = R(s) + \gamma \sum_{s'} T(s, \pi_i(s), s')U_i(s')
 \]
 
 By removing the max operator, the optimal policy can now be determined using linear algebra to solve the Bellman equations.
 
-\subsection{Reinforcement Learning}
+\section{Reinforcement Learning}
 
 In practical control problems it is often the case that a complete model of the underlying MDP is not available. Most commonly, the transition model and reward function are unknown. To solve these problems it is beneficial to have agents which can learn optimal policies through the process of reinforcement learning. A typical reinforcement agent will generate a policy by acting within the environment and use positive and negative outcomes to reinforce good policy decisions and avoid bad policy decisions.
 
 The observations of an agent acting an environment can be organized in tuples referred to as samples: $(s, a, r, s')$. This sample layout means the agent was in state $s$, took action $a$, received reward $r$, and ended up in state $s'$. These samples can be collected by interacting with the environment or by using a generative model of the environment. Some reinforcement learning algorithms also support policy generation by collecting samples from multiple agents or generative models.
 
-\subsubsection{Online and Offline Reinforcement Learning}
+\subsection{Online and Offline Reinforcement Learning}
 
-\subsection{Least-Squares Policy Iteration}
+An online reinforcement learning agent is one which performs policy updates while actively interacting with the environment. A typical online reinforcement learning agent will start with some initial policy and interact with the environment by either selecting an action at random or following the current policy. The proportion of time the agent spends randomly selecting an action is the exploration rate. Changing the exploration rate will affect the policy generated by shifting toward or away from local maximums. An agent with a very low exploration rate is likely to generate a policy based on the earliest successful actions it takes, while an agent with a very high exploration rate may take longer to converge to a policy but is more likely to explore the entirety of the state-space. Some agents use more advanced exploration policies in an attempt to explore the state-space more effectively.
 
-\subsection{Policy Gradient}
+In contrast, an offline reinforcement learning agent generates a policy without directly interacting with the environment. Generally this is acheived by using pre-existing samples from the environment or generative models. Because offline agents do not directly interact with the environment they do not have control over exploration policy in the environment. This can be limiting; however, this also provides a high level of flexibility as there are no restriction on how the samples are gathered. For example, an offline agent can trivially generate a policy based on the experience of a pre-existing agent or even multiple pre-existing agents. With online agents this is usually not possible, although a pre-existing online agent can provide a starting policy for another agent.
 
-\subsection{Artificial Intelligence in Video Games}
+Another important benefit of offline agents is the decoupling of action selection and policy updates. In video games this is particularly important as agents have a very strict time restrictions. Video game agents are expected to act at least as often as graphics are drawn to the screen. Using a minimum framerate of 30 hertz results in a maximum decision time of 33 ms (note - try to source this). During the decision time for an online agent the policy must also be updated. Because of this restriction it is usually unfeasible to use online agents in a video game; however, an offline agent is feasible because the policy update step is decoupled from interacting with the environment.
 
-\subsubsection{Scripting}
+\section{Artificial Intelligence in Video Games}
 
-\subsubsection{Dynamic Planning}
+\subsection{Scripting}
 
-\subsubsection{Quake III Bots}
+\subsection{Dynamic Planning}
 
-\subsection{CUDA Architecture}
+\subsection{Quake III Bots}
+
+\section{CUDA Architecture}
