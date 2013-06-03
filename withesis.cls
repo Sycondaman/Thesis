@@ -1241,7 +1241,7 @@
 \def\abbreviations{%\separatorpage{DISCARD THIS PAGE}
   \chapter*{LIST OF ABBREVIATIONS}
   \addcontentsline{toc}{chapter}{LIST OF ABBREVIATIONS}}
-\def\endnomenclature{\par\newpage}
+\def\endabbreviations{\par\newpage}
 
 %=============================================================================
 % LIST OF SYMBOLS

@@ -2,7 +2,7 @@
 
 \section{Least-Squares Policy Iteration}
 
-Least-Squares Policy Iteration (LSPI) is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr. LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step. LSTD$Q$ stands for Least-Squares Temporal-Difference Learning for the State-Action Value Function; in other words, it is a least-squares temporal difference algorithm for learning $\hat{Q}^\pi$, the least-squares fixed-point approximation to the sate-action value function, $Q^\pi$.
+Least-Squares Policy Iteration (LSPI) \cite{lspi} is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr. LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step. LSTD$Q$ stands for Least-Squares Temporal-Difference Learning for the State-Action Value Function; in other words, it is a least-squares temporal difference algorithm for learning $\hat{Q}^\pi$, the least-squares fixed-point approximation to the sate-action value function, $Q^\pi$.
 
 LSPI uses a linear architecture for $\hat{Q}^\pi$, which means the values are approximated using a linear combination of $k$ basis functions, commonly referred to as features:
 
