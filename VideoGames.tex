@@ -1,0 +1,39 @@
+\chapter{Artificial Intelligence in Video Games}
+
+In video games the implementation of artificial intelligence (AI) is generally constrained most heavily by performance. Maintaining the illusion of a virtual world requires an AI agent to react within a time frame that is reasonable for a human player. Turn-based strategy games like chess or checkers are less impaired by performance because human players are often expected to take long periods of time to make a decision; however, real-time games generally require decisions to be made in milliseconds, severely limiting the complexity of the AI algorithm used. This chapter will provide a brief look at common AI techniques using concrete examples.
+
+\section{Pac-Man}
+
+Early video games computer controlled agents relied primarily on scripting and randomization. Scripted is a process by which a developer manually creates a set of a rules which govern an agent's actions. Randomization was often included in these rules to increase the difficulty of determining how the agent would behave, as well as to mimic human behavior which does not always follow strict rules. A famous example is Pac-man, which made clever use of scripted AI in order to create the illusion that each enemy possessed a different personality. \cite{pacman}
+
+Pac-Man is a game in which the player controls a hungry character, known as the pac-man, who must navigate a maze in order to eat `food' while avoiding enemies called `ghosts'. The ghosts are controlled by the computer and their goal is to kill the player by touching him. They have limited speed and pac-man can consume a special item to make the ghosts vulnerable to attack for a short period of time. Over the years fans of the game Pac-Man have studied and dissected the behavior of the ghosts and published these results as ``The Pac-Man Dossier''. \cite{pacman} This dossier goes into great detail about the behavior of the ghosts with the intent of allowing players to exploit weaknesses in their behavior.
+
+Each ghost was given a unique set of rules to guide them, resulting in behavior that many players see as resulting from different personalities. One of the ghosts, named Blinky, was programmed to always move toward the space currently occupied by the player. As a result, this ghost was seen as more aggressive and was more likely to kill the player than the other ghosts. Another ghost, called Pinky, was programmed to always target a space in front of the player's direction of movement.
+
+In addition to each ghost's unique movement rules, all ghosts were subject to global rules which helped to prevent the player from being hunted relentlessly. Periodically the ghosts would switch between a chase mode, during which their unique rules were in place, and a scatter mode, during which each ghost would flee to a pre-configured path.
+
+The rules controlling the ghosts in Pac-Man can be trivially represented with conditional statements. This is the signature of scripted AI: simple, fast, and easy to control. For these reasons, script scripted AI remains prevelant to this day and often serves as the building block for more complex techniques.
+
+\section{Quake III}
+
+Quake III is a video game in the genre of first person shooters (FPS). In Quake III the player controls a humanoid character fighting against opposing humanoids, called `bots', in arena-style combat. All players, human or bot, can pick up different weapons which each have different characteristics. Weapons spawn in pre-defined locations on the map as well as other items such as ammunition, health, and armor. Increasing health and armor improves a character's ability to survive attacks from an opponent. Each time a character dies they respawn with a default weapon and stat levels which can be improved by collecting items on the map. The goal is to kill your opponents until you reach a pre-defined kill count which signifies victory. 
+
+The environment for Quake III is orders of magnitude more complex than that of Pac-Man. In Quake III the world is continuous, three dimensional, governed by real-world physics, and the bots were designed as a stand-in for human opponents. To meet this challenge, a more complex AI system than just scripting was required. The designer of this AI, J.M.P van Waveren, designed a heirarchical system which relied on finite state machines for efficient decision making and combined this with fuzzy logic to provide unique personalities. \cite{q3bot}
+
+The core of the Quake III bot is composed of four levels, each of which is broken up into sub-sections. At the lowest level exists the area awareness system (AAS) and the basic actions interface. The AAS provides feedback on the physical state of the world around the bot, such as items or enemies which are visible. The basic actions interface provides a translation of bot commands into the same keyboard inputs a human player uses.
+
+The second level is separated into sections for handling navigation, chat, and bot preferences. This level feeds into the third level, which directs goal-seeking behavior as well as logic to support chat commands and team communication. The fourth level is responsible for coordination between team members.
+
+Breaking the AI design into these levels and sections drastically reduces the complexity of creating a competitive bot. Each of these sections can be designed using very simple decision making structures, but the end result is a bot which was capable of competing with the average human and even coordinating in groups. Most of these sections were implemented as straightforward conditional scripts, with two notable exceptions: the bot preference system and the `AI Network'.
+
+\subsection{Bot Preference}
+
+The bot preference system was implemented in order to allow different bots to have different personalities. Imagine you wanted to implement a bot, Rocky, who has a particular affinity for the rocket launcher. A first attempt might simply have Rocky always go for the rocket launcher. Now imagine how Rocky would perform on a large map, if he spawned in a location such that he needed to cross the entire map in order to reach the rocket launcher. In this scenario, Rocky would have a high risk of being intercepted on the way to the rocket launcher. At this point it would become difficult for him to decide whether to fight and what items to pick up. You could start scripting the AI to handle this, but with an extremely large number of scenarios to handle scripting quickly becomes an impossible solution.
+
+To get around this problem, Waveren implemented a fuzzy logic system. Fuzzy logic works by making the assumption that all values have some continuous truth, rather than just `true' or `false'. This system allows for a lot more granularity in goal selection. Going back to the previous example, rather than simply programming Rocky to go for the rocket launcher, Rocky would be given a high preference for the rocket launcher. To fully flesh out his personality, you would need to fill in his preference for other weapon types, as well as some other characteristics which would determine how likely he is to run from a fight when he does not have the upper hand.
+
+Once Rocky's preferences are filled out, he can then make decisions based on the state of the environment and his own preferences. Now when Rocky starts out he will likely head toward the rocket launcher, but this time when he is approached by an enemy he will be capable of selecting a good nearby weapon to fight with before resuming his trek toward the rocket launcher. This preference system provides a very simple way to create a new bot personality without having to modify the code or logic. Another benefit is that Rocky will know how to behave regardless of the map, items available, or number of enemies that approach him, all without needing to set anything more than his preference values.
+
+\subsection{AI Network}
+
+\section{F.E.A.R.}

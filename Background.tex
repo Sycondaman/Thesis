@@ -24,7 +24,7 @@ For discounted rewards the utility of a state sequence is:
     U_h([s_0,s_1,s_2,...]) = R(s_0) + \gamma R(s_1) + \gamma^2 R(s_2) + ...
 \]
 
-The discount factor $\gamma$ is defined as a number between $0$ and $1$. From this it is clear that additive rewards is a special case of discounted rewards with $\gamma = 1$.  Note that as $\gamma$ approaches $0$, the utility function becomes weighted toward immediate rewards and as $\gamma$ approaches $1$ the utility function becomes weighted toward long term rewards. For the remainder of this paper all MDPs will be assumed to use discounted rewards with $\gamma \in [0, 1)$, precluding additive rewards.
+The discount factor $\gamma$ is defined as a number between $0$ and $1$. From this it is clear that additive rewards is a special case of discounted rewards with $\gamma = 1$.  Note that as $\gamma$ approaches $0$, the utility function becomes weighted toward immediate rewards and as $\gamma$ approaches $1$ the utility function becomes weighted toward long term rewards. For the remainder of this paper all MDPs will be assumed to use discounted rewards with $\gamma \in [0, 1)$.
 
 \section{Policy Iteration}
 
@@ -71,23 +71,5 @@ An online reinforcement learning agent is one which performs policy updates whil
 In contrast, an offline reinforcement learning agent generates a policy without directly interacting with the environment. Generally this is acheived by using pre-existing samples from the environment or generative models. Because offline agents do not directly interact with the environment they do not have control over exploration policy in the environment. This can be limiting; however, this also provides a high level of flexibility as there are no restriction on how the samples are gathered. For example, an offline agent can trivially generate a policy based on the experience of a pre-existing agent or even multiple pre-existing agents. With online agents this is usually not possible, although a pre-existing online agent can provide a starting policy for another agent.
 
 Another important benefit of offline agents is the decoupling of action selection and policy updates. In video games this is particularly important as agents have a very strict time restrictions. Video game agents are expected to act at least as often as graphics are drawn to the screen. Using a minimum framerate of 30 hertz results in a maximum decision time of 33 ms (note - try to source this). During the decision time for an online agent the policy must also be updated. Because of this restriction it is usually unfeasible to use online agents in a video game; however, an offline agent is feasible because the policy update step is decoupled from interacting with the environment.
-
-\section{Artificial Intelligence in Video Games}
-
-Artificial intelligence (AI) designs in a given environment tends to vary greatly based on the contraints placed on the agent. For example, building an AI agent for tic-tac-toe is often seen as an example of a trivial problem. The state-space for tic-tac-toe is small enough that an exact representation is available and the perfect move can at any point can be computed by traversing the state-space in a very short period of time. In most practical control problems this is not possible and approximate representations of the state-space are necessary. Some environments have other constraints, such as a robot which has both a limited and imperfect view of its environment.
-
-In video games the AI is generally constrained in the response time; in order to maintain the illusion of a virtual world an AI agent must be capable of making decisions at a rate on par with a human. In turn-based strategy games like chess or checkers this constraint is less limiting on the AI as even human opponents are expected to take several seconds or even minutes to decide each action; however, in real-time games an AI agent is often required to make decisions at a much higher rate. Due to this constraint video game AI lags behind academia and often favors clever design over more advanced AI techniques.
-
-Early video games which required computer controlled agents relied primarily on scripting and randomization: a process by a which a developer manually creates a set of a rules which govern an agent's actions. The classic game Pac-man made clever use of scripted AI in order to create the illusion of each enemy possessing a different personality. A more recent example is a role-playing game called Dragon Age: Origins, in which the player could actually set the behavior of AI controlled companions using a simple script interface.
-
-Scripted AI remains prevelant to this day as it provides developers a great deal of control over the user experience; however, as the complexity of video games has increased there is an increasing demand for challenging AI opponents. To present a greater challenge AI opponents were often given advantages over users such as faster response times or knowledge of the game world which could not be acquired by a human. While this design is often reasonable, there are games in which AI opponents or allies act as stand-ins for other human players. Early attempts at improving AI agents relied on reinforcement learning techniques used before the game was released, allowing for better policies to be developed in an environment without the strict performance constraints. Over time these techniques were combined with more advanced AI techniques such as dynamic planning algorithms
-
-(find some more citations for this section... hard but should be able to find *some*)
-
-\subsection{Scripting}
-
-\subsection{Dynamic Planning}
-
-\subsection{Quake III Bots}
 
 \section{CUDA Architecture}
