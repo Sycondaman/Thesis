@@ -45,3 +45,13 @@ As Rocky moves around the map he evaluates the state and checks if anything matc
 On its own the finite state machine does not provide a generic decision making process, it just lowers the complexity of the implementation. However, the AI Network transitions are guided by bot preferences, generalizing the decision making process. Between the AI Network and the bot preferences, the Quake III bot provides a strong foundation for a general-purpose AI which is capable of acting in a wide variety of environments without any the need for environment specific logic.
 
 \section{F.E.A.R.}
+
+ When F.E.A.R. was under development, the expectations for realistic bot behavior in FPS games was on the rise. Traditional techniques, such as the finite state machine in Quake III, were still resulting in complex and unmanageable behavior. In an attempt to curtail the increasing complexity, the development team decided to use planning algorithms.
+
+A planning system works by defining a goal and a set of actions, then using an algorithm which determines what series of actions will reach that goal. Each action can be represented as a set of prerequisites and expected results. For example, the action $FireWeapon$ might have the prerequisite $WeaponEquipped \land HaveAmmo$ and the expected result $EnemyDead$.
+
+Imagine Rocky is once again searching for a rocket launcher. When Rocky enters a room he sees an enemy at the other side of the room. Rocky checks and finds that $EnemyDead$ is a goal, and that $WeaponEquipped$ is true but  $HaveAmmo$ is false. Luckily for Rocky, a stash of ammunition is nearby and he has the action $PickupAmmo$, which has the prerequisite $AmmoNearby$ and the effect $HaveAmmo$. Rocky then plans to execute the action $PickupAmmo$ followed by $FireWeapon$. Because $FireWeapon$ does not guarantee the effect $EnemyDead$, Rocky will repeat $FireWeapon$ until he kills the enemy.
+
+What happens if Rocky's enemy then runs? Obviously the plan Rocky formed is no longer valid. In this situation, Rocky can then re-evaluate the state of his environment and formulate a new plan to reach his goals.
+
+F.E.A.R.'s planning system reduced the complexity of implementing well-behaved AI by decoupling decision making from the environment. To create a bot, only the actions available to the bot and the goals are needed, the remainder is handled by the planning algorithm. In addition, because the plan and state transitions are dynamically determined, the bot is capable of behavior that is not directly programmed. The end result of this system was a bot which was universally applauded for realistic, tactical bots.
