@@ -72,4 +72,31 @@ In contrast, an offline reinforcement learning agent generates a policy without 
 
 Another important benefit of offline agents is the decoupling of action selection and policy updates. In video games this is particularly important as agents have a very strict time restrictions. Video game agents are expected to act at least as often as graphics are drawn to the screen. Using a minimum framerate of 30 hertz results in a maximum decision time of 33 ms (note - try to source this). During the decision time for an online agent the policy must also be updated. Because of this restriction it is usually unfeasible to use online agents in a video game; however, an offline agent is feasible because the policy update step is decoupled from interacting with the environment.
 
-\section{CUDA Architecture}
+\section{General Purpose Programmming on the GPU}
+
+In the early 1990s the computer processing unit (CPU) was responsible for almost the entirety of processing on a desktop computer system, including the video output. Following the advent of graphical operating systems, demand for better visual processing applications increased at a rate which performance increases on the CPU could not sustain. In response a domain specific piece of hardware was created, the graphics processing unit (GPU). Today the architecture of the GPU has allowed expanded to general purpose programming in support of high performance computing applications. This section will provide an overview of the architecture of the GPU, compare it to that of the CPU, and explain the advent of general purpose programming on the GPU (GPGPU).
+
+\subsection{CPU Architecture}
+
+CPUs were originally designed to process only one task at a time and performance improvements were focused heavily on improving the speed at which a series of calculations could be performed. At the most basic level a CPU consists of a fetch and decode unit, an execution unit, and a set of registers. Fetching and decoding units pull the next instruction set for a program and orchestrate the calculations. The calculations themselves occur in the execution unit, and the registers store the data needed for execution. \cite{GPGPU}
+
+This basic CPU design, however, is very slow. Fetching instructions and data from main memory is an expensive operation and some of the execution units may spend time idle depending on the program flow. To combat this a number of performance optimizations are used. Out-of-order execution allows instructions to be re-ordered to use execution units in parallel, memory is pre-fetched based on what data is expected to be needed by the next set of instructions, and the CPU will predict which branch will be taken by a program. These optimizations all improve the throughput offered by a single instruction stream.
+
+Modern CPUs also take advantage of the knowledge that multiple instruction streams are all trying to execute simultaneously. If one stream stalls or does not fully utilize the execution units, the CPU will try to use idle units to begin calculations for an instruction set from a different stream. These changes facilitate higher performance for programs which separate programming instructions into multiple threads.
+
+More recently, CPUs have moved to low levels of parallelization as well. Rather than increasing the speed of a single instruction stream, new models will duplicate hardware to support completely simultaneous execution of multiple instruction streams.
+
+\subsection{GPU Architecture}
+
+Due to the nature of computer graphics, GPUs were designed to focus on parallelization rather than single stream throughput. Graphical scenes are generally represented as a large number of discrete parts, each of which must be processed using a single transformation. These transforms can usually be applied to each discrete part independently of the rest of the scene. In order to process as many portions of the scene at once, a high number of basic processors is required. \cite{GPGPU}
+
+GPUs require the same basic architecture as the CPU: a fetch and decode unit, an exection unit, and registers. Using this simple design does not provide the same throughput per stream as the more advanced CPU design, but it allows more processing cores to be included on the same chip to support many parallel stream. However, just as the CPU design became optimized for single streams, the GPU design was optimized for multiple streams.
+
+Imagine you are using an image editing program to change the hue of a picture with dimensions of 1280x1024. This picture has 1,310,720 individual pixels, each of which must be processed using the same linear transform. With a single core CPU this operation would need to be repeated for each of these pixels. If your GPU had 32 processing cores you could reduce the number of operations required to 40960.
+
+Reducing the operations by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization is called single instruction, multiple data, or SIMD, processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
+
+Using SIMD processing the GPU is able to scale to very large number of simultaneous streams without requiring as much hardware. Now imagine that each of our 32 processing cores had 8 execution units and 8 registers. The calculation can now be completed in 5120 steps, a speedup of $256x$! This performance does have one drawback: each of the processing cores must perform the same instruction across all execution units. This has some implications for GPGPU which will be discussed later.
+
+\subsection{GPU Programming Model}
+
