@@ -1,5 +1,7 @@
 \chapter{Implementation}
 
+As discussed in the background section, offline learning algorithms have the potential to provide machine learning behavior for agents acting in performance constrained environments. To demonstrate this potential we chose to us Least-Squares Policy Iteration (LSPI) and compare it to an online policy gradient algorithm. This chapter presents these algorithms in detail. Details on how we integrated these algorithms in the Quake III environment can be found in the `Experiments' chapter.
+
 \section{Least-Squares Policy Iteration}
 
 Least-Squares Policy Iteration (LSPI) \cite{lspi} is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr. LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step. LSTD$Q$ stands for Least-Squares Temporal-Difference Learning for the State-Action Value Function; in other words, it is a least-squares temporal difference algorithm for learning $\hat{Q}^\pi$, the least-squares fixed-point approximation to the sate-action value function, $Q^\pi$.
