@@ -113,6 +113,57 @@ In terms of performance, LSTD$Q$ requires $O(k^2)$ independent of the size of th
     B^{(t)} = B^{(t-1)} - \frac{B^{(t-1)}\phi(s_t,a_t)\big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}}{1 + \phi(s_t,a_t) - \gamma\phi\big(s_t',\pi(s_t'))\big)^TB^{(t-1)}\phi(s_t,a_t)}
 \]
 
+The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode for LSPI is shown in \ref{lspi}. \cite{lspi}
+
+\begin{algorithm}
+\caption{LSPI}
+\label{lspi}
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $D$ - Samples of the form $(s,a,r,s')$ 
+                \item $k$ - Number of basis functions
+                \item $\phi$ - Basis functions
+                \item $\gamma$ - Discount factor
+                \item $\epsilon$ - Stopping criterion
+                \item $w_0$ - Initial policy
+            \end{itemize}
+        \STATE $w' \leftarrow w_0$
+        \REPEAT
+            \STATE $w \leftarrow w'$
+            \STATE $w' \leftarrow$ LSTD$Q (D, k, \phi, \gamma, w)$
+        \UNTIL{$(\parallel w - w' \parallel < \epsilon)$}
+        \RETURN $w$
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+\caption{LSTD$Q$}
+\label{lstdq}
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $D$ - Samples of the form $(s,a,r,s')$ 
+                \item $k$ - Number of basis functions
+                \item $\phi$ - Basis functions
+                \item $\gamma$ - Discount factor
+                \item $w$ - Current policy
+            \end{itemize}
+        \STATE $B \leftarrow \frac{1}{\delta}I$ \COMMENT{$(k \times k)$ matrix}
+        \STATE $b \leftarrow 0$ \COMMENT{$(k \times 1)$ vector}
+        \FORALL{$(s,a,r,s') \in D$}
+            \STATE $B \leftarrow B - \frac{B\phi(s,a)\big(\phi(s,a) - \gamma\phi(s',\pi(s'))\big)^TB}{1 + \phi(s,a) - \gamma\phi\big(s',\pi(s'))\big)^TB\phi(s,a)}$
+            \STATE $b \leftarrow b + \phi(s,a)r$
+        \ENDFOR
+        \STATE $\tilde{w} \leftarrow Bb$
+        \RETURN $\tilde{w}$
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Massively Parallel Least-Squares Policy Iteration}
+
+
+
 \subsection{Online Least-Squares Policy Iteration}
 
 \section{Policy Gradient}
