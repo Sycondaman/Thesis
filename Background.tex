@@ -98,7 +98,7 @@ Imagine you are using an image editing program to change the hue of a picture wi
 
 Reducing the operations by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization is called single instruction, multiple data, or SIMD, processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
 
-Using SIMD processing the GPU is able to scale to very large number of simultaneous streams without requiring as much hardware. Now imagine that each of our 32 processing cores had 8 execution units and 8 registers. The calculation can now be completed in 5120 steps, a speedup of $256x$! This performance does have one drawback: each of the processing cores must perform the same instruction across all execution units. This has some implications for GPGPU which will be discussed in the next section.
+Using SIMD processing the GPU is able to scale to very large number of simultaneous streams without requiring as much hardware. Now imagine that each of our 32 processing cores had 8 execution units and 8 registers. The calculation can now be completed in 5120 steps, a speedup of $256x$! This performance boost does have one drawback: each of the processing cores must perform the same instruction across all execution units. This has some implications for GPGPU which will be discussed in the next section.
 
 \subsection{Programming Model}
 

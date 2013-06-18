@@ -2,72 +2,6 @@
 
 As discussed in the background section, offline learning algorithms have the potential to provide machine learning behavior for agents acting in performance constrained environments. To demonstrate this potential we chose to us Least-Squares Policy Iteration (LSPI) and compare it to an online policy gradient algorithm. This chapter presents these algorithms in mathematical detail and suggests a modification to LSPI to support its use as an online algorithm for performance constrained environments. Some of the derivation steps of the core algorithms have been left out, for more information please see the referenced sources. Details on how we integrated these algorithms in the Quake III environment can be found in the `Experiments' chapter.
 
-\section{Policy Gradient}
-
-The term `Policy Gradient' describes a class of machine learning techniques which apply gradient ascent optimization to the policy value function. Given the policy value function, $p(\theta)$, policy gradient algorithms can be succinctly described by the following formula:
-
-\[
-    \theta_{n+1} = \theta_{n} + \alpha\nabla_\theta p(\theta_{n})
-\]
-In this formula $\theta$ represents the policy parameters and $\alpha$ is referred to as the step size or learning rate. \cite{norvig}\cite{bishop} Despite the apparent simplicity of this formula, calculating the value of $\nabla_\theta p(\theta)$ is not always straightforward. In this section we provide the mathematical background for the particular online gradient policy algorithm we used for comparison purposes.
-
-To calculate $\nabla_\theta p(\theta)$, we must first ensure that $p(\theta)$ is differentiable with respect to $\theta$. Assume we have a basis function, $J_\theta(s,a)$ which is used to generate a policy as follows:
-
-\[
-    \pi_\theta(s,a) = argmax_a J_\theta(s,a)
-\]
-The use of the $argmax$ function may result in a discontinous distribution. This can be fixed very simply by using a probabilistic policy \cite{olpomdp:lecture}:
-
-\[
-    \pi_\theta(s,a) = Pr(a|s) = \frac{e^{J_\theta(s,a)/T}}{\sum\limits_{a'\in A} e^{J_\theta(s,a')/T}}
-\]
-
-Using this model we can then derive a value for $\nabla_\theta p(\theta)$:
-\[
-    \begin{aligned}
-        \nabla_\theta p(\theta) &= \sum_a (\nabla_\theta\pi_\theta(s_0,a))R(a) \\
-        &= \sum_a \pi_\theta(s_0, a) \nabla_\theta log(\pi_\theta(s_0, a))R(a) \\
-    \end{aligned}
-\]
-We can further simplify the gradient calculation:
-\[
-    \begin{aligned}
-        \nabla_\theta log(\pi_\theta(s_0, a)) &= \nabla_\theta log(\frac{e^{J_\theta(s_0,a)}}{\sum\limits_{a'} e^{J_\theta(s_0,a')}}) \\
-        &= \nabla_\theta J_\theta(s_0, a) - \nabla_\theta log\sum\limits_{a'} e^{J_\theta(s_0,a')} \\
-        &= f_\theta(s_0, a) - \frac{\sum\limits_{a'} e^{J_\theta(s_0,a')}\nabla_\theta J_\theta(s_0, a')}{\sum\limits_{a''} e^{J_\theta(s_0,a'')}} \\
-        &= f_\theta(s_0, a) - \sum\limits_{a'} \pi_\theta(s_0,a')f_\theta(s_0,a') \\
-        &= g_\theta(s_0,a)
-    \end{aligned}
-\]
-Now we have:
-\[
-    \nabla_\theta p(\theta) = \sum_a\pi_\theta(s_0,a)g_\theta(s_0,a)R(a)
-\]
-
-\begin{algorithm}[H]
-\caption{OLPOMDP}
-\label{olpomdp}
-    \begin{algorithmic}[1]
-        \REQUIRE
-            \begin{itemize} 
-                \item $\beta \in [0,1)$ 
-                \item $T > 0$ 
-                \item $\theta_0 \in \mathbb{R}^K$ 
-            \end{itemize}
-    \STATE Set $e = 0$
-    \FOR{$t = 0$ to $\infty$}
-        \STATE Observe the current state, $s$
-        \STATE Select action $a$ according to $\pi_\theta(s)$
-        \STATE Execute $a$
-        \STATE Observe reward $r$
-        \STATE $e \leftarrow \beta e + f(s,a) - \sum\limits{a'}\pi_\theta(s,a')f_\theta(s,a')$
-        \STATE $\theta \leftarrow + \alpha \cdot r \cdot e$
-    \ENDFOR
-    \end{algorithmic}
-\end{algorithm}
-
-Using this formula Baxter, Bartlett, and Weaver proposed an algorithm called OLPOMDP (Algorithm \ref{olpomdp}). \cite{olpomdp} The algorithm works by maintaining the eligibility trace, $e$, and using this value to update $\theta$ according to the reward given for each sample in the environment. The value $\beta$ is referred to as the bias and controls the weight of previous experiences in the environment. Increasing $\beta$ biases the algorithm toward past experiences while also increasing the variance.
-
 \section{Least-Squares Policy Iteration}
 
 Least-Squares Policy Iteration (LSPI) is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr. \cite{lspi} LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step. LSTD$Q$ stands for Least-Squares Temporal-Difference Learning for the State-Action Value Function; in other words, it is a least-squares temporal difference algorithm for learning $\hat{Q}^\pi$, the least-squares fixed-point approximation to the sate-action value function, $Q^\pi$.
@@ -180,3 +114,63 @@ In terms of performance, LSTD$Q$ requires $O(k^2)$ independent of the size of th
 \]
 
 \subsection{Online Least-Squares Policy Iteration}
+
+\section{Policy Gradient}
+
+The term `Policy Gradient' describes a class of machine learning techniques which apply gradient ascent optimization to the policy value function. Given the policy value function, $p(\theta)$, policy gradient algorithms can be succinctly described by the following formula:
+
+\[
+    \theta_{n+1} = \theta_{n} + \alpha\nabla_\theta p(\theta_{n})
+\]
+In this formula $\theta$ represents the policy parameters and $\alpha$ is referred to as the step size or learning rate. \cite{norvig}\cite{bishop} Despite the apparent simplicity of this formula, calculating the value of $\nabla_\theta p(\theta)$ is not always straightforward. In this section we provide the mathematical background for the particular online gradient policy algorithm we used for comparison purposes.
+
+To calculate $\nabla_\theta p(\theta)$, we must first ensure that $p(\theta)$ is differentiable with respect to $\theta$. Assume we have a basis function, $J_\theta(s,a)$ which is used to generate a policy as follows:
+
+\[
+    \pi_\theta(s,a) = \argmax_a J_\theta(s,a)
+\]
+The use of the $argmax$ function may result in a discontinous distribution. This can be fixed very simply by using a probabilistic policy \cite{olpomdp:lecture}:
+
+\[
+    \pi_\theta(s,a) = Pr(a|s) = \frac{e^{J_\theta(s,a)/T}}{\sum\limits_{a'\in A} e^{J_\theta(s,a')/T}}
+\]
+
+Using this model we can then derive a value for $\nabla_\theta p(\theta)$:
+\[
+    \begin{aligned}
+        \nabla_\theta p(\theta) &= \sum_a (\nabla_\theta\pi_\theta(s_0,a))R(a) \\
+        &= \sum_a \pi_\theta(s_0, a) \nabla_\theta log(\pi_\theta(s_0, a))R(a) \\
+    \end{aligned}
+\]
+After simplifying the gradient calculation we arrive at the following:
+\[
+    \begin{aligned}
+        \nabla_\theta p(\theta) &= \sum_a\pi_\theta(s_0,a)g_\theta(s_0,a)R(a) \\
+        g_\theta(s_0,a) &= f_\theta(s_0, a) - \sum\limits_{a'} \pi_\theta(s_0,a')f_\theta(s_0,a')
+    \end{aligned}
+\]
+
+In order to estimate the gradient from samples we use basic Monte Carlo techniques: execute the policy while making small changes to $\theta$. The result is an online algorithm called OLPOMDP, proposed by Baxter, Bartlett, and Weaver. \cite{olpomdp} Since the policy involved is probablistic, exploration of the environment happens naturally when selecting actions. With each action we then update the eligibility trace, $e$, by estimating the value of the gradient for that action. The eligibility trace is then used to update $\theta$ according to the reward given for each sample in the environment. The value $\beta$ is referred to as the bias and controls the weight of previous experiences in the environment. Increasing $\beta$ biases the algorithm toward past experiences while also increasing the variance. The pseudocode for this algorithm is given in Algorithm \ref{olpomdp}.
+
+\begin{algorithm}
+\caption{OLPOMDP}
+\label{olpomdp}
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $\beta \in [0,1)$ 
+                \item $T > 0$ 
+                \item $\theta_0 \in \mathbb{R}^K$ 
+            \end{itemize}
+    \STATE Set $e = 0$
+    \FOR{$t = 0$ to $\infty$}
+        \STATE Observe the current state, $s$
+        \STATE Select action $a$ according to $\pi_\theta(s)$
+        \STATE Execute $a$
+        \STATE Observe reward $r$
+        \STATE $e \leftarrow \beta e + f(s,a) - \sum\limits_{a'}\pi_\theta(s,a')f_\theta(s,a')$
+        \STATE $\theta \leftarrow + \alpha \cdot r \cdot e$
+    \ENDFOR
+    \end{algorithmic}
+\end{algorithm}
+
