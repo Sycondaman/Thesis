@@ -554,7 +554,7 @@
 %  Macro should be called inside a \parbox of right width, with \normalsize.
 %=============================================================================
 \long\def\@makecaption#1#2{
-  \vskip 10pt
+  \vskip 0pt
   \singlespace\centering
   #1\ \ #2}
 
