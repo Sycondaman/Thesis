@@ -31,6 +31,7 @@ Rather than limiting the bots to executing only a single node in any given game 
 \begin{algorithm}
 \caption{Node Execution Method}
 \label{ainode}
+    {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
         \STATE Check for Special Nodes: \emph{Observer}, \emph{Intermission}, \emph{Dead}
         \STATE Ensure Movement Mode: \emph{swimming}, \emph{rocket jump}, \emph{etc}
@@ -39,6 +40,7 @@ Rather than limiting the bots to executing only a single node in any given game 
         \STATE Setup Movement
         \RETURN \emph{true}
     \end{algorithmic}
+    }
 \end{algorithm}
 
 Each execution node is formatted in the same way, following the pattern described in Algorithm \ref{ainode}. Intermixed among these primary steps are key conditionals which check portions of the state to see if a transition is necessary. If a transition is deemed necessary prior to step $5$, the node will return \emph{false}.
@@ -48,6 +50,7 @@ In order to utilize as much of node execution method as possible, our bot needed
 \begin{algorithm}
 \caption{Modified Node Execution Method}
 \label{ainode:custom}
+    {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
         \STATE Check for Special Nodes: \emph{Observer}, \emph{Intermission}, \emph{Dead}
         \STATE Ensure Movement Mode: \emph{swimming}, \emph{rocket jump}, \emph{etc}
@@ -64,6 +67,7 @@ In order to utilize as much of node execution method as possible, our bot needed
         \STATE Setup Movement
         \RETURN \emph{true}
     \end{algorithmic}
+    }
 \end{algorithm}
 
 To achieve these goals we added a new flag called \emph{bottype} to the bot's personal state data. By default this value is $0$, so we used the values $1$ to represent LSPI agents and $2$ to represent gradient policy agents. Once we knew if a given bot was native or our own, we simply modified all of the nodes to ignore state transitions if it was our bot, and we added a new conditional demonstrated in steps $3-10$ of Algorithm \ref{ainode:custom}.
@@ -72,15 +76,15 @@ To achieve these goals we added a new flag called \emph{bottype} to the bot's pe
 
 As our code was utilizing the AI Network's finite state machine, our code was also limited by the actions available in this state machine. The finite state machine contains twelve nodes total; however, half of the nodes are maintained for special scenarios including bot death and match intermissions. As a result there are only six nodes available, each of which maps to an action available to our agent. The resulting actions are as follows:
 
+{\fontsize{12}{5}\selectfont
 \begin{itemize}
-    \setlength\itemsep{0em}
     \item \emph{Seek Long-term Goal} - Selects an item or location across the entire map and attempts to reach that goal. After an extended period of time has passed the bot will re-evaluate its goal.
     \item \emph{Seek Nearby Goal} - Assumes a goal has already been selected and moves toward the goal. After a short period of time the bot will re-evaluate its goal.
     \item \emph{Battle Fight} - The enemy becomes the goal and the bot will attempt to do combat maneuvers while attacking the enemy.
     \item \emph{Battle Chase} - The bot will move toward the last known location of the enemy in an effort to catch and kill them.
     \item \emph{Battle Retreat} - The bot selects a goal far away and moves toward it in an attempt to flee from the battle.
     \item \emph{Battle Nearby Goal} - The bot selects a nearby item to improve its odds of defeating the enemy.
-\end{itemize}
+\end{itemize} }
 Note that all of the actions prefixed \emph{Battle} are only valid if there is an enemy, and any actions without this prefix are only valid if there is no enemy.
 
 As far as goal selection and seeking is concerned, our bots do not entirely follow the same rules as the native bots. In the default Quake III source code, attempting to find a nearby goal automatically updates the bot's goal state. In addition to this, selecting a goal creates sets a value referred to as an \emph{avoid timeout}. This value specifies a period of time during which the bot should ignore that goal, which means that any further searches before the timeout expires will skip that goal. 
@@ -88,3 +92,6 @@ As far as goal selection and seeking is concerned, our bots do not entirely foll
 Since our bot searches for goals every step, we had to modify the code to pass in a parameter specifying if we were trying to peek without changing the state. However, even this was not complete enough since the node \emph{seek nearby goal} does not actually search for nearby goals. As a result we had to modify the code to pick a nearby goal whenever attempting to transfer into that state. In addition, since the bots do not actually detect whether an item is present and we don't share the avoid scheme of the native bots, we modified the bots to add an avoid timeout to any item which they were potentially touching. The end result should be equivalent to the native bots; however, we did notice a few minor bugs where the bot ran out of available goals. Luckily this happens infrequently, is handled gracefully by the game (by resetting avoid timers), and is avoided by good policies.
 
 Goal selection is a limiting factor for our bots: although we can direct the bot to look for a goal through the seeking and nearby goal states, we have no control over the goal selection itself. As a result, we rely completely on the Quake III AI implementation to decide what items our bot should pick up and whether the bot wants to roam or defend a key location. As a result, some of our results do not properly demonstrate the full capabilities of a machine learning AI in this environment; however, we were still able to create bots capable of repeatedly defeating the native bots.
+
+\subsection{Performance Scaling}
+

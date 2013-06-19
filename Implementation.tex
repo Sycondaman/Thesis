@@ -109,15 +109,16 @@ Using these formulas, an algorithm can be constrcuted to learn the weighted leas
 
 In terms of performance, LSTD$Q$ requires $O(k^2)$ independent of the size of the state and action spaces. Each update to the matrices $\hat{A}$ and $\hat{b}$ has a cost of $O(k^2)$ and a one-time cost of $O(k^3)$ is required to solve the system. An optimized version of LSTD$Q$ is also possible using the Sherman-Morrison formula for a recursive least-squares computation of the inverse. Let $B^{(t)}$ be the inverse of $\hat{A}^{(t)}$:
 
-\[
-    B^{(t)} = B^{(t-1)} - \frac{B^{(t-1)}\phi(s_t,a_t)\big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}}{1 + \phi(s_t,a_t) - \gamma\phi\big(s_t',\pi(s_t'))\big)^TB^{(t-1)}\phi(s_t,a_t)}
-\]
-
+    \begin{equation}
+        \label{eq:lspi}
+    B^{(t)} = B^{(t-1)} - \frac{B^{(t-1)}\phi(s_t,a_t)\big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}}{1 + \big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}\phi(s_t,a_t)}
+    \end{equation}
 The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode for LSPI is shown in \ref{lspi}. \cite{lspi}
 
 \begin{algorithm}
 \caption{LSPI}
 \label{lspi}
+    {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
         \REQUIRE
             \begin{itemize} 
@@ -135,11 +136,13 @@ The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode 
         \UNTIL{$(\parallel w - w' \parallel < \epsilon)$}
         \RETURN $w$
     \end{algorithmic}
+    }
 \end{algorithm}
 
 \begin{algorithm}
 \caption{LSTD$Q$}
 \label{lstdq}
+    {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
         \REQUIRE
             \begin{itemize} 
@@ -152,19 +155,76 @@ The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode 
         \STATE $B \leftarrow \frac{1}{\delta}I$ \COMMENT{$(k \times k)$ matrix}
         \STATE $b \leftarrow 0$ \COMMENT{$(k \times 1)$ vector}
         \FORALL{$(s,a,r,s') \in D$}
-            \STATE $B \leftarrow B - \frac{B\phi(s,a)\big(\phi(s,a) - \gamma\phi(s',\pi(s'))\big)^TB}{1 + \phi(s,a) - \gamma\phi\big(s',\pi(s'))\big)^TB\phi(s,a)}$
+            \STATE $B \leftarrow B - \frac{B\phi(s,a)\big(\phi(s,a) - \gamma\phi(s',\pi(s'))\big)^TB}{1 + \big(\phi(s,a) - \gamma\phi(s',\pi(s'))\big)^TB\phi(s,a)}$
             \STATE $b \leftarrow b + \phi(s,a)r$
         \ENDFOR
         \STATE $\tilde{w} \leftarrow Bb$
         \RETURN $\tilde{w}$
     \end{algorithmic}
+    }
 \end{algorithm}
 
 \subsection{Massively Parallel Least-Squares Policy Iteration}
 
+It turns out that LSPI does not require any algorithmic changes in order to support a massively parallel implementation. This is because LSPI is expressed in terms of vector and matrix operations, which are already inherently parallel. However, this still requires implementation changes and leaves room for environment specific optimizations.
 
+Knowing that we wanted to demonstrate the capabilities of a GPU for massively parallel acceleration, the first decision was what software stack to use. We chose CUDA because our test machine uses an nVidia GPU and several colleagues have experience with CUDA programming.
+
+The next step was translating LSPI into standardized linear algebra operations, using the basic linear albegra subprograms (BLAS) library specification. The BLAS specification was created to facilitate high performance computing for linear algebra operations: developers can write software which uses the BLAS specification and users can compile a BLAS implementation which is optimized for their hardware. The CUDA software development kit includes a library called cuBLAS which provides a BLAS interface for use on the GPU. Algorithm \ref{lstdq:blas} contains the pseudocode for LSTD$Q$ converted into BLAS operations.
+
+\begin{algorithm}
+\caption{LSTD$Q$ BLAS Implementation}
+\label{lstdq:blas}
+    {\fontsize{12}{10}\selectfont
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $D$ - Samples of the form $(s,a,r,s')$ 
+                \item $k$ - Number of basis functions
+                \item $\phi$ - Basis functions
+                \item $\gamma$ - Discount factor
+                \item $w$ - Current policy
+            \end{itemize}
+        \STATE $B \leftarrow scal(I, \delta)$ \COMMENT{$(k \times k)$ matrix}
+        \STATE $b \leftarrow 0$ \COMMENT{$(k \times 1)$ vector}
+        \FORALL{$(s,a,r,s') \in D$}
+            \STATE $x \leftarrow scal(\phi(s',a'), \gamma)$
+            \STATE $x \leftarrow axpy(\phi, x, -1)$
+            \STATE $x \leftarrow scal(x, -1)$ \COMMENT{Now $x = \phi(s,a) - \gamma\phi(s',\pi(s'))$}
+            \STATE $y \leftarrow gemv(B, \phi(s,a))$
+            \STATE $z \leftarrow gemv(x, B)$
+            \STATE $num \leftarrow ger(y, z)$ \COMMENT{Calculate the numerator, see \eqref{eq:lspi}}
+            \STATE $denom \leftarrow 1 + dot(\phi(s,a), z)$ \COMMENT{Calculate the denominator, see \eqref{eq:lspi}}
+            \STATE $\Delta B \leftarrow scal(num, \frac{1}{denom})$
+            \STATE $B \leftarrow axpy(\Delta B, B, -1)$
+            \STATE $\Delta b \leftarrow scal(\phi(s,a), r)$
+            \STATE $b \leftarrow axpy(\Delta b, b)$
+        \ENDFOR
+        \STATE $\tilde{w} \leftarrow gemv(B, b)$
+        \RETURN $\tilde{w}$
+    \end{algorithmic}
+    }
+\end{algorithm}
+
+The functions utilized for the BLAS implementation are as follows:
+
+{\fontsize{12}{5}\selectfont
+\begin{itemize}
+    \item $scal$ - Performs vector-scalar multiplication
+    \item $axpy$ - Adds two vectors together with a scalar multiplier
+    \item $gemv$ - Performs vector-matrix multiplication
+    \item $ger$ - Performs vector-vector multiplication
+    \item $dot$ - Calculates the dot product of two vectors
+\end{itemize} 
+}
+
+You'll notice that some of the operations we utilized pass in matrices in place of vectors. This is possible because a matrix can be represented by a vector and operations such as a addition and scalar multiplication are identical regardless of whether a vector represents a matrix.
+
+Although more optimizations can be made to take advantage of massively parallel computing, using BLAS functions provides an easy way to switch between CPU and GPU libraries for comparison and the majority of remaining optimizations would all be hardware specific. For this reason we chose not to implement performance optimizations for either the CPU or GPU implementations. More discussion of this and the potential impact of our work can be found in the experiments chapter.
 
 \subsection{Online Least-Squares Policy Iteration}
+
+
 
 \section{Policy Gradient}
 
@@ -206,6 +266,7 @@ In order to estimate the gradient from samples we use basic Monte Carlo techniqu
 \begin{algorithm}
 \caption{OLPOMDP}
 \label{olpomdp}
+    {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
         \REQUIRE
             \begin{itemize} 
@@ -223,5 +284,6 @@ In order to estimate the gradient from samples we use basic Monte Carlo techniqu
         \STATE $\theta \leftarrow + \alpha \cdot r \cdot e$
     \ENDFOR
     \end{algorithmic}
+    }
 \end{algorithm}
 
