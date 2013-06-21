@@ -221,6 +221,48 @@ We could write custom CUDA kernels to perform these operations on the GPU in a c
 
 \subsection{Online Least-Squares Policy Iteration}
 
+Offline learning techniques are typically used to process samples from an environment before an agent interacts with that environment. The limitation of these algorithms is that they cannot alter an agent's behavior while the agent is interacting in the environment. An online learning technique will usually be used if an agent's behavior needs to adapt dynamically to the environment. However, in a performance constrained environment it may not be feasible to perform the update step of an online reinforcement learning algorithm at every action selection.
+
+We propose an algorithm which uses LSPI to process samples colled by an online agent and periodically updates the agent's policy. This approach allows for an agent's policy to be updated dynamically in an environment while eliminating the need to always perform an update step after selecting an action. The offline update process can be throttled to ensure the agent meets strict timing requirements for action selection, with the only drawback being increased delays between policy updates.
+
+To demonstrate this approach with LSPI, we present Algorithm \ref{alg:olspi}. The algorithm works by collecting samples from the agent in the environment and executing LSPI once a pre-defined number of samples has been collected. Each time this number of new samples is collected the entire batch of samples is passed in. The number of samples to collect before each iteration should be carefully controlled to ensure that even the first update step provides a noticeable benefit to the agent.
+
+\begin{algorithm}
+\caption{Online LSPI}
+\label{alg:olspi}
+    {\fontsize{12}{10}\selectfont
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $n$ - Number of samples per batch
+                \item $N$ - Maximum number of samples to collect
+                \item $k$ - Number of basis functions
+                \item $\phi$ - Basis functions
+                \item $\gamma$ - Discount factor
+                \item $\epsilon$ - Stopping criterion
+                \item $\alpha$ - Exploration rate
+                \item $w_0$ - Initial policy
+            \end{itemize}
+        \STATE $w \leftarrow w_0$ \COMMENT{$w$ represents the current policy weights}
+        \STATE $D \leftarrow 0$
+        \STATE $t \leftarrow 0$
+        \WHILE{$t < N/n$}
+            \FOR{$i = 0$ to $n$}
+                \STATE Observe the state $s$
+                \STATE Select action $a$, with exploration rate $\alpha$
+                \STATE Observe the reward $r$
+                \STATE Observe the final state $s'$
+                \STATE Append $(s,a,r,s')$ to $D$
+            \ENDFOR
+            
+            \STATE CreateThread($w \leftarrow LSPI(D, k, \phi, \gamma, \epsilon, w)$)
+        \ENDWHILE
+    \end{algorithmic}
+    }
+\end{algorithm}
+
+In Algorithm \ref{alg:olspi} sample collection continues while the last batch of samples is processed. It would also be reasonable to pause sample collection until the policy update is completed. As long as the exploration rate remains in effect LSPI will continue to converge on the optimal policy. Additionally, the value of $N$ can be infinite if an agent that never ceases to update its policy is desired. For agents that do cease to update their policy it would be beneficial to stop exploring once the policy is finalized. In fact, agents which do not collect samples while the policy is being updated could also cease exploration during that period, resulting in an agent which switches between a policy mode and an exploration mode in order to maximize reward while maintaing exploration for successive policy iterations.
+
 \section{Integration with Quake III}
 
 The source code for Quake III is available on github under an open source license. \cite{q3code} To perform the experiments we implemented LSPI using CUDA acceleration and integrated this code into the Quake III source code.
