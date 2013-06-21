@@ -58,7 +58,7 @@ F.E.A.R.'s planning system reduced the complexity of implementing well-behaved A
 
 \section{Reinforcement Learning in Video Games}
 
-In the paper ``Learning Agents in Quake III'' researchers from University of Utrecht applied Q-learning to a neural network in order to train combat movements \cite{q3combat}. Neural networks are data structures used to control agent policies by using layers of nodes, each of which takes in an input, processes it, and passes the output to the next layer of nodes. Q-learning is an online reinforcement algorithm which was used to learn the optimal weights for each node.
+In the paper ``Learning Agents in Quake III'' researchers from University of Utrecht applied Q-learning to a neural network in order to train combat movements \cite{q3combat}. Neural networks are data structures used to control agent policies by using layers of nodes, each of which takes in an input, processes it, and passes the output to the next layer of nodes \cite{norvig}. Q-learning is an online reinforcement algorithm which was used to learn the optimal weights for each node \cite{norvig}.
 
 The resulting bot was capable of defeating an identical opponent by using superior combat movements in $65\%$ of matches. However, in order to achieve these results they were required to place some restrictions on the environment: the bot was restricted to a single weapon, the room could not have any corners, and there were no obstacles. Additionally, learning the optimal weights required approximately $10$ hours of playtime. While their results were promising, the techniques they proposed are more suitable to generating a policy before letting a user play the game, rather than allowing the bot to develop better techniques while a user is playing.
 
