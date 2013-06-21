@@ -1,98 +1,7 @@
 \chapter{Emperical Evaluation}
 \label{chap:evaluation}
 
-We created several experiments in order to provide a thorough comparison of online versus offline learning as well as CPU versus GPU processing. The opening section of this chapter provides technical information on how we implemented the different algorithms used in the Quake III environment. The remainder of the chapter will contain detailed explanation of each experiment we ran, including why we ran the experiment, the environment setup, and a discussion of the results.
-
-\section{Quake III Bots}
-
-The source code for Quake III is available on github under an open source license. \cite{q3code} Included with the source code is a Visual Studio solution file for C compilation. To perform the experiments we implemented LSPI using CUDA acceleration in a C++ project and then integrated this code into the Quake III source code.
-
-The Quake III solution is separated into multiple projects representing different parts of the game engine and implementation; for our work we only modified the \emph{game}, \emph{botlib}, and \emph{server} projects, with most of the work occuring in the \emph{game} project. Modifications to \emph{botlib} were required to allow our bots to peak into the state of the environment without affecting it, which caused bugs when our bot checked the state of the environment more frequently than the native bots. The modifications to \emph{server} were only to facilitate the changes in \emph{botlib}.
-
-Recall from the background section that the Quake III AI is separated into four levels which are further broken into subsections. The \emph{botlib} provides the implementation for most of the lower two levels. The remaning logic is contained in the \emph{game} project, including the AI Network which guides actions at a high level. Our bot was implemented largely by supplanting the AI Network's finite state machine and allowing more frequent and flexible state transitions.
-
-\subsection{Understanding the AI Optimizations}
-
-Generic AI systems generally function on the assumption that we alternate between a few states: environment observation, action selection, action execution, and reward collection. With this flow it is very easy to change AI implementations by simply taking the environment observations and replacing the action selection step. However, in a performance constrained environment it is generally considered expensive and unnecessary to follow this flow.
-
-Suppose we had an agent acting in the Quake III environment called Cindy. Cindy's first action (as with every Quake III bot) is to search for a long-term goal. This can be an item or an area on the map. Because Cindy already has some knowledge about the arena, she decides she wants to go to the other side of the map and pick up her favorite gun, the BFG. However, before she moves forward she looks around at the nearby items. Since there are only other weapons and no armor, and Cindy \emph{really} loves the BFG, she decides to just head toward her current long-term goal.
-
-After Cindy takes a step the world moves forward a step as other agents in the environment take similar actions. Now Cindy has the choice to re-evaluate her decision, but should she? After all, she just took a full profile of her environment and selected her choices, with little to no environmental changes occurring. It is very likely that Cindy would just make the same decision again and it takes much less thought to re-evaluate the environment.
-
-Once again, Cindy takes a step and the world move forward. This time; however, an enemy has become visible. Even though Cindy only decided on her current task two steps ago, she decides to change her goal to killing the enemy. Notice that Cindy did not reconsider her entire environment: she could have realized that the starting weapon was not a good choice to attack her enemy with, resulting in turning around to grab a nearby weapon. Instead, Cindy only evaluates some small portion of her environment at each step and unless something critical in that portion changes, such as an enemy appearing, she will continue assuming the last decision she made was valid.
-
-Cindy's behavior essentially represents the logic that the native Quake III bots follow. This performance optimization was critical for allowing several bots to fight in a match when desktop processors were still under the $1GHz$ limit and universally constrained to a single core. Unfortunately, this highly tangled system makes integrating a new bot very difficult. The next section discusses how we modified the AI structure to support a more traditional model for our own bots while still sharing code with the native bots.
-
-\subsection{Using the Finite State Machine}
-
-The existing finite state machine code is separated into two types of methods: transition methods and node execution methods. The transition methods generally perform some minor tasks like print out chat responses or tracking the number of node transition the bot executes, and then it sets a \emph{AI node} function pointer to the node execution method for that specific transition. From Cindy's example, when the enemy appeared this would trigger a state transition by calling the \emph{battle fight} node transition function, called \emph{enter battle fight}. Before calling this function the AI node would be referencing the node \emph{seek long-term goal}, but after the transition function this would reference the node \emph{battle fight}.
-
-Rather than limiting the bots to executing only a single node in any given game step, each node execution function returns \emph{true} when it has finished executing and \emph{false} if it has called a transition method to a node before it reached the end of the current node. This causes the code calling the nodes to continue calling until a node reaches completion.
-
-\begin{algorithm}
-\caption{Node Execution Method}
-\label{ainode}
-    {\fontsize{12}{10}\selectfont
-    \begin{algorithmic}[1]
-        \STATE Check for Special Nodes: \emph{Observer}, \emph{Intermission}, \emph{Dead}
-        \STATE Ensure Movement Mode: \emph{swimming}, \emph{rocket jump}, \emph{etc}
-        \STATE Execute Map Scripts
-        \STATE Execute Node Scripts
-        \STATE Setup Movement
-        \RETURN \emph{true}
-    \end{algorithmic}
-    }
-\end{algorithm}
-
-Each execution node is formatted in the same way, following the pattern described in Algorithm \ref{ainode}. Intermixed among these primary steps are key conditionals which check portions of the state to see if a transition is necessary. If a transition is deemed necessary prior to step $5$, the node will return \emph{false}.
-
-In order to utilize as much of node execution method as possible, our bot needed to do two things: skip any conditionals which could change state and execute any possible state changes when the first node is called each step. There are some exceptions to this rule required to maintain proper bot behavior. For example, there is a node called \emph{seek activate entity} which is used to open doors by shooting buttons. We did not want to modify this code as it could fundamentally break the bot's ability to navigate the map.
-
-\begin{algorithm}
-\caption{Modified Node Execution Method}
-\label{ainode:custom}
-    {\fontsize{12}{10}\selectfont
-    \begin{algorithmic}[1]
-        \STATE Check for Special Nodes: \emph{Observer}, \emph{Intermission}, \emph{Dead}
-        \STATE Ensure Movement Mode: \emph{swimming}, \emph{rocket jump}, \emph{etc}
-        \IF{Custom Bot and No Action Chosen}
-            \STATE Observe Environment
-            \STATE Get Action
-            \IF{Bot Wants to Switch Nodes}
-                \STATE Call Transition Method
-                \RETURN \emph{false}
-            \ENDIF
-        \ENDIF
-        \STATE Execute Map Scripts
-        \STATE Execute Node Scripts
-        \STATE Setup Movement
-        \RETURN \emph{true}
-    \end{algorithmic}
-    }
-\end{algorithm}
-
-To achieve these goals we added a new flag called \emph{bottype} to the bot's personal state data. By default this value is $0$, so we used the values $1$ to represent LSPI agents and $2$ to represent gradient policy agents. Once we knew if a given bot was native or our own, we simply modified all of the nodes to ignore state transitions if it was our bot, and we added a new conditional demonstrated in steps $3-10$ of Algorithm \ref{ainode:custom}.
-
-\subsection{Actions and Goals}
-
-As our code was utilizing the AI Network's finite state machine, our code was also limited by the actions available in this state machine. The finite state machine contains twelve nodes total; however, half of the nodes are maintained for special scenarios including bot death and match intermissions. As a result there are only six nodes available, each of which maps to an action available to our agent. The resulting actions are as follows:
-
-{\fontsize{12}{5}\selectfont
-\begin{itemize}
-    \item \emph{Seek Long-term Goal} - Selects an item or location across the entire map and attempts to reach that goal. After an extended period of time has passed the bot will re-evaluate its goal.
-    \item \emph{Seek Nearby Goal} - Assumes a goal has already been selected and moves toward the goal. After a short period of time the bot will re-evaluate its goal.
-    \item \emph{Battle Fight} - The enemy becomes the goal and the bot will attempt to do combat maneuvers while attacking the enemy.
-    \item \emph{Battle Chase} - The bot will move toward the last known location of the enemy in an effort to catch and kill them.
-    \item \emph{Battle Retreat} - The bot selects a goal far away and moves toward it in an attempt to flee from the battle.
-    \item \emph{Battle Nearby Goal} - The bot selects a nearby item to improve its odds of defeating the enemy.
-\end{itemize} }
-Note that all of the actions prefixed \emph{Battle} are only valid if there is an enemy, and any actions without this prefix are only valid if there is no enemy.
-
-As far as goal selection and seeking is concerned, our bots do not entirely follow the same rules as the native bots. In the default Quake III source code, attempting to find a nearby goal automatically updates the bot's goal state. In addition to this, selecting a goal creates sets a value referred to as an \emph{avoid timeout}. This value specifies a period of time during which the bot should ignore that goal, which means that any further searches before the timeout expires will skip that goal. 
-
-Since our bot searches for goals every step, we had to modify the code to pass in a parameter specifying if we were trying to peek without changing the state. However, even this was not complete enough since the node \emph{seek nearby goal} does not actually search for nearby goals. As a result we had to modify the code to pick a nearby goal whenever attempting to transfer into that state. In addition, since the bots do not actually detect whether an item is present and we don't share the avoid scheme of the native bots, we modified the bots to add an avoid timeout to any item which they were potentially touching. The end result should be equivalent to the native bots; however, we did notice a few minor bugs where the bot ran out of available goals. Luckily this happens infrequently, is handled gracefully by the game (by resetting avoid timers), and is avoided by good policies.
-
-Goal selection is a limiting factor for our bots: although we can direct the bot to look for a goal through the seeking and nearby goal states, we have no control over the goal selection itself. As a result, we rely completely on the Quake III AI implementation to decide what items our bot should pick up and whether the bot wants to roam or defend a key location. As a result, some of our results do not properly demonstrate the full capabilities of a machine learning AI in this environment; however, we were still able to create bots capable of repeatedly defeating the native bots.
+We test several hypotheses in order to provide a thorough comparison of CPU versus GPU processing as well as online versus offline learning. This chapter contains detailed explanations of each experiment we ran, including why we ran the experiment, the environment setup, and a discussion of the results.
 
 \section{Performance Scaling}
 
@@ -137,3 +46,65 @@ To understand the benefits of a large basis function, consider designing an AI a
 Now that we have defined some actions for our agent, consider what information would be useful in order to make intelligent decisions. First and foremost, the agent needs information on its own state: \emph{health}, \emph{armor}, \emph{equipped weapon}, \emph{available weapons}, \emph{equipped ammo}, \emph{available ammo}. Keep in mind that some of these features, such as equipped weapon and available weapons, would need to be represented by multiple values in the basis. In fact, representing this information in Quake III would already result in a basis with $23$ values which must be repeated for each of the $10$ actions we have defined, and we still lack the information to make more complex decisions such as how to choose an area to defend.
 
 Of course, the basis size can be made smaller by carefully controlling the basic actions available to the bot and carefully selecting features. However, the key result of this experiment is demonstrating that the advent of GPU acceleration enables an AI designer more control over selecting features and actions for an agent without suffering the significant performance degredation present with CPU based algorithms as the basis size increases.
+
+\section{Online LSPI}
+
+\subsection{Policy Gradient}
+
+The term \emph{Policy Gradient} describes a class of machine learning techniques which apply gradient ascent optimization to determine the optimal policy. Given the policy value function, $p(\theta)$, policy gradient algorithms can be succinctly described by the following formula:
+
+\[
+    \theta_{n+1} = \theta_{n} + \alpha\nabla_\theta p(\theta_{n})
+\]
+where $\theta$ represents the policy parameters and $\alpha$ is referred to as the step size or learning rate \cite{norvig}\cite{bishop}.
+
+Before we estimate $\nabla_\theta p(\theta)$, we must ensure that $p(\theta)$ is differentiable with respect to $\theta$. Assume we have a basis function, $J_\theta(s,a)$ which is used to generate a policy as follows:
+
+\[
+    \pi_\theta(s,a) = \argmax_a J_\theta(s,a)
+\]
+The use of the $argmax$ function may result in a discontinuous distribution. This can be fixed by using a probabilistic policy \cite{olpomdp:lecture}:
+
+\begin{equation}
+\label{eq:grad:policy}
+    \pi_\theta(s,a) = Pr(a|s) = \frac{e^{J_\theta(s,a)/T}}{\sum\limits_{a'\in A} e^{J_\theta(s,a')/T}}
+\end{equation}
+
+To estimate the gradient from samples we use the following formula:
+\begin{equation}
+\label{eq:grad}
+    \begin{aligned}
+        \nabla_\theta p(\theta) &= \sum_a\pi_\theta(s_0,a)g_\theta(s_0,a)R(a) \\
+        g_\theta(s_0,a) &= f_\theta(s_0, a) - \sum\limits_{a'} \pi_\theta(s_0,a')f_\theta(s_0,a')
+    \end{aligned}
+\end{equation}
+
+Equation \ref{eq:grad} is the basis for an online algorithm called OLPOMDP \cite{olpomdp}. Intuitively, the algorithm estimates the gradient using Monte Carlo techniques: execute the policy while making small changes to $\theta$. Because we use Equation \ref{eq:grad:policy} to select actions, our agent will naturally explore the environment. With each action we then update the value $e$, called the eligibility trace, by estimating the value of the gradient for that action.
+
+The pseudocode for OLPOMDP is given in Algorithm \ref{olpomdp}. Notice that instead of updating $\theta$ directly the value $e$, called the eligibility trace, is used as an intermediary. The eligibility trace represents the discounted sum of gradients over previous state-action pairs and is used to update $\theta$ according to the reward given for the corresponding action. The value $\beta$ is referred to as the bias and controls the weight of previous experiences in the environment. Increasing $\beta$ biases the algorithm toward past experiences while also increasing the variance. 
+
+\begin{algorithm}
+\caption{OLPOMDP}
+\label{olpomdp}
+    {\fontsize{12}{10}\selectfont
+    \begin{algorithmic}[1]
+        \REQUIRE
+            \begin{itemize} 
+                \item $\beta \in [0,1)$ 
+                \item $T > 0$ 
+                \item $\theta_0 \in \mathbb{R}^K$ 
+            \end{itemize}
+    \STATE Set $e = 0$
+    \FOR{$t = 0$ to $\infty$}
+        \STATE Observe the current state, $s$
+        \STATE Select action $a$ according to $\pi_\theta(s)$
+        \STATE Execute $a$
+        \STATE Observe reward $r$
+        \STATE $e \leftarrow \beta e + f(s,a) - \sum\limits_{a'}\pi_\theta(s,a')f_\theta(s,a')$
+        \STATE $\theta \leftarrow + \alpha \cdot r \cdot e$
+    \ENDFOR
+    \end{algorithmic}
+    }
+\end{algorithm}
+
+\section Bot Reward
