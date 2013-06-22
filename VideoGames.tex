@@ -20,7 +20,14 @@ Quake III is a video game in the genre of first person shooters (FPS). In Quake 
 
 The environment for Quake III is orders of magnitude more complex than that of Pac-Man. In Quake III the world is continuous, three dimensional, governed by physics which approximates reality, and the bots were designed as a stand-in for human opponents. To meet this challenge, a more complex AI system than just scripting was required. The designer of this AI, J.M.P van Waveren, designed a hierarchical system which relied on finite state machines for efficient decision making and combined this with fuzzy logic to provide unique personalities \cite{q3bot}.
 
-The core of the Quake III bot is composed of four levels, each of which is broken up into sub-sections. At the lowest level exists the area awareness system (AAS) and the basic actions interface. The AAS provides feedback on the physical state of the world around the bot, such as items or enemies which are visible. The basic actions interface provides a translation of bot commands into the same keyboard inputs a human player uses.
+\begin{figure}
+	\centering
+		\includegraphics[width=0.80\textwidth]{q3_layers.png}
+	\caption{The Quake III AI layers. \cite{q3bot}}
+	\label{fig:q3:layers}
+\end{figure}
+
+The core of the Quake III bot is composed of four levels, as shown in Figure \ref{fig:q3:layers}. At the lowest level exists the area awareness system (AAS) and the basic actions interface. The AAS provides feedback on the physical state of the world around the bot, such as items or enemies which are visible. The basic actions interface provides a translation of bot commands into the same keyboard inputs a human player uses.
 
 The second level is separated into sections for handling navigation, chat, and bot preferences. This level feeds into the third level, which directs goal-seeking behavior as well as logic to support chat commands and team communication. The fourth level is responsible for coordination between team members.
 
@@ -38,7 +45,14 @@ Once Rocky's preferences are filled out, he can then make decisions based on the
 
 While the preference system handles decisions regarding what weapons to pick up and what weapon to use, the bot still needs to know when it is a good idea to search for items, fight an enemy, or run away. These decisions are handled by the AI Network. Consider again the situation Rocky was in when an enemy intercepted him while he was searching for the rocket launcher. From a high-level perspective, Rocky can choose to fight, run, or pick up a nearby item. Once again, writing conditional scripts to handle this situation would result in complex code that cannot apply to new maps or item layouts.
 
-Instead of conditional scripts, Waveren implemented the AI Network using a finite state machine \cite{q3bot}. A finite state machine consists of a number of nodes, called  `states', and edges which guide transitions between states. Rocky starts in an initial state called `Seek Long Term Goal'. In this state Rocky uses his preferences and some knowledge of the map to select a long term goal; in our scenario, that would be the rocket launcher. 
+\begin{figure}
+	\centering
+		\includegraphics[width=0.80\textwidth]{q3_fsm.png}
+	\caption{The Quake III AI Network. \cite{q3bot}}
+	\label{fig:q3:fsm}
+\end{figure}
+
+Instead of conditional scripts, Waveren implemented the AI Network using a finite state machine as demonstrated in Figure \ref{fig:q3:fsm} \cite{q3bot}. A finite state machine consists of a number of nodes, called  `states', and edges which guide transitions between states. Rocky starts in an initial state called `Seek Long Term Goal'. In this state Rocky uses his preferences and some knowledge of the map to select a long term goal; in our scenario, that would be the rocket launcher. 
 
 As Rocky moves around the map he evaluates the state and checks if anything matches the conditions specified on a transition from the long term goal state. If Rocky runs into an enemy, he would see there is a transition from `Seek Long Term Goal' to `Battle Fight'. Once Rocky is in this state, the transitions available to him change, as do the states he can transition into. 
 
