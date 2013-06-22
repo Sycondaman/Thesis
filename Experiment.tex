@@ -12,7 +12,7 @@ There are two inputs for LSPI that scale, each of which we ran experiments to ev
 Figure \ref{fig:samples} shows the graph of our results complete with linear best-fit lines. We observe that the GPU implementation not only performs worse than the CPU implementation, but also appears to scale worse with the number of samples. At first glance, this may seem contrary to the expectations of our work. In reality, these results are both reasonable and expected. In order to minimize the performance impact of the basis function we chose to run these tests with the smallest basis function, which had $30$ values. The result is that the largest matrix computation involves $30 \times 30$ or $90$ operations. A CPU is capable of processing this number of operations in a very short period of time, and does not have to do any memory copy operations before processing the samples. The GPU can compute most of these operations in parallel; however, first all of the samples must be copied from host memory to device memory. The end result is that with such a small basis the CPU performs better and because the GPU must always do a memory copy, the CPU also scales better.
 
 \begin{figure}
-	\includegraphics[width=\textwidth]{Time_vs_Samples.png}
+	\includegraphics[width=0.75\paperwidth]{Time_vs_Samples.png}
     \caption{Plot of performance based on sample size}
 	\label{fig:samples}
 \end{figure}
@@ -20,7 +20,8 @@ Figure \ref{fig:samples} shows the graph of our results complete with linear bes
 The second experiment tested the performance of LSPI with a constant number of samples while the basis size increased. The experiment was setup by collecting $10,000$ samples from an agent following a random policy with a $25\%$ exploration rate. These samples were then used to train agents with basis functions which ranged in size from $30$ to $258$. As with the samples scaling experiment, every attempt was made to ensure these experiments were completed in identical environments. Due to the variance we witnessed in our experiments we repeated this training for each agent three times for both the CPU and GPU implementation. The results are graphed with fit lines in Figure \ref{fig:basis}.
 
 \begin{figure}
-    \includegraphics[width=\textwidth]{Time_vs_Basis.png}
+    \centering
+    \includegraphics[height=0.33\paperheight]{Time_vs_Basis.png}
     \caption{Plot of performance based on basis size}
     \label{fig:basis}
 \end{figure}

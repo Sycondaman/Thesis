@@ -79,29 +79,43 @@ In the early 1990s the central processing unit (CPU) was responsible for almost 
 
 \subsection{CPU Architecture}
 
-CPUs were originally designed to process only one task at a time and performance improvements were focused heavily on improving the speed at which a series of calculations could be performed. At the most basic level a CPU consists of a fetch and decode unit, an execution unit, and a set of registers. Fetching and decoding units pull the next instruction set for a program and orchestrate the calculations. The calculations themselves occur in the execution unit, and the registers store the data needed for execution \cite{GPGPU}.
+CPUs were originally designed to process only one task at a time and performance improvements were focused heavily on improving the speed at which a series of calculations could be performed. At the most basic level a CPU consists of a fetch and decode unit, an execution unit, and a set of registers. Fetching and decoding units pull the next instruction set for a program and orchestrate the calculations. The calculations themselves occur in the execution unit, and the registers store the data needed for execution \cite{gpgpu}. This minimal processor architecture is displayed on the left in Figure \ref{fig:cpu}.
+
+\begin{figure}
+    \includegraphics[height=0.25\paperheight]{CPU_Simple.png}
+    \includegraphics[height=0.25\paperheight]{CPU.png}
+    \caption{Processor architecture diagrams. Left: A minimally functional processor. Right: A modern CPU. \cite{gpgpu}}
+    \label{fig:cpu}
+\end{figure}
 
 This basic CPU design, however, has many speed limitations. Fetching instructions and data from main memory is an expensive operation and some of the execution units may spend time idle depending on the program flow. Many performance optimizations are used to reduce the impact of these limitations. Out-of-order execution allows instructions to be re-ordered to use execution units in parallel, memory is pre-fetched based on what data is expected to be needed by the next set of instructions, and the CPU will predict which branch will be taken by a program. These optimizations all improve the throughput offered by a single instruction stream.
 
-Modern CPUs also take advantage of the knowledge that multiple instruction streams are all trying to execute simultaneously. If one stream stalls or does not fully utilize the execution units, the CPU will try to use idle units to begin calculations for an instruction set from a different stream. These changes facilitate higher performance for programs which separate programming instructions into multiple threads.
+Modern CPUs also take advantage of the knowledge that multiple instruction streams are all trying to execute simultaneously. If one stream stalls or does not fully utilize the execution units, the CPU will try to use idle units to begin calculations for an instruction set from a different stream. These changes, demonstrated in Figure \ref{fig:cpu}, facilitate higher performance for programs which separate programming instructions into multiple threads.
 
 More recently, CPUs have moved to low levels of parallelization as well. Rather than increasing the speed of a single instruction stream, new models will duplicate hardware to support completely simultaneous execution of multiple instruction streams.
 
 \subsection{GPU Architecture}
 
-Due to the nature of computer graphics, GPUs were designed to focus on parallelization rather than single stream throughput. Graphical scenes are generally represented as a large number of discrete parts, each of which must be processed using a single transformation. These transforms can usually be applied to each discrete part independently of the rest of the scene. In order to process as many portions of the scene at once, a high number of basic processors is required \cite{GPGPU}.
+Due to the nature of computer graphics, GPUs were designed to focus on parallelization rather than single stream throughput. Graphical scenes are generally represented as a large number of discrete parts, each of which must be processed using a single transformation. These transforms can usually be applied to each discrete part independently of the rest of the scene. In order to process as many portions of the scene at once, a high number of basic processors is required \cite{gpgpu}.
 
 GPUs require the same basic architecture as the CPU: a fetch and decode unit, an execution unit, and registers. Using this simple design does not provide the same throughput per stream as the more advanced CPU design, but it allows more processing cores to be included on the same chip to support many parallel streams. However, just as the CPU design became optimized for single streams, the GPU design was optimized for multiple streams.
 
 Suppose we use an image editing program to change the hue of a picture with dimensions of 1280x1024. This picture has 1,310,720 individual pixels, each of which must be processed using the same linear transform. With a single core CPU this operation would need to be repeated for each of these pixels. If we use a GPU with 32 processing cores we could reduce the number of operations required to 40960.
 
-Reducing the operations by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization is called single instruction, multiple data, or SIMD, processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
+Reducing the operations by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization, demonstrated in Figure \ref{fig:simd} is called single instruction, multiple data (SIMD) processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
+
+\begin{figure}
+    \centering
+	\includegraphics[height=0.25\paperheight]{SIMD.png}
+    \caption{The SIMD architecture. \cite{gpgpu}}
+	\label{fig:simd}
+\end{figure}
 
 Using SIMD processing the GPU is able to scale to very large number of simultaneous streams without requiring as much hardware. Now imagine that each of our 32 processing cores has 8 execution units and 8 registers. The calculation can now be completed in 5120 steps, a factor of 256 speedup! This performance boost does have one drawback: each of the processing cores must perform the same instruction across all execution units. This has some implications for GPGPU which will be discussed in the next section.
 
 \subsection{Programming Model}
 
-There are two main approaches to making the GPU's SIMD architecture available to programmers: explicitly using vector instructions, or implicitly using threads. Explicit instructions require the code to be written specifically for use on a GPU architecture. This can be beneficial as it requires the developer to carefully design algorithms for use on the GPU. However, manually writing highly parallelizable code can be difficult and hardware specific, thus reducing portability and requiring more development time \cite{GPGPU}.
+There are two main approaches to making the GPU's SIMD architecture available to programmers: explicitly using vector instructions, or implicitly using threads. Explicit instructions require the code to be written specifically for use on a GPU architecture. This can be beneficial as it requires the developer to carefully design algorithms for use on the GPU. However, manually writing highly parallelizable code can be difficult and hardware specific, thus reducing portability and requiring more development time \cite{gpgpu}.
 
 Implicit models allow for programmers to write code as if it were for any multi-threaded CPU architecture. This can make the transition from CPU to GPU programming easier, but it also makes it easier to write very inefficient code. Despite the model allowing operations to be programmed using threads, groups of threads still must share the same fetch and decode unit. If the programmer is not aware of this limitation, it is possible to write code which attempts to branch threads operating on a single SIMD, lowering performance.
 
