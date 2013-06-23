@@ -1,13 +1,14 @@
-\chapter{Massively Parallel Learning Algorithms}
+\chapter{Massively Parallel Reinforcement Learning}
 \label{chap:implementation}
 
 As discussed in the background section, offline learning algorithms have the potential to learn behavior for agents acting in performance constrained environments. To demonstrate this potential we chose to use Least-Squares Policy Iteration (LSPI) and compare it to an online policy gradient algorithm. This chapter presents LSPI in mathematical detail and suggests a modification to LSPI to support its use as an online algorithm for performance constrained environments. Some of the derivation steps of LSPI have been left out, for more information please see the referenced sources. The last section in this chapter describes the integration of LSPI in the Quake III environment.
 
 \section{Least-Squares Policy Iteration}
+\label{chap:implementation:lspi}
 
 Least-Squares Policy Iteration (LSPI) is an offline, model-free reinforcement learning algorithm proposed by Michail Lagoudakis and Ronald Parr \cite{lspi}. LSPI takes as input a set of samples from the environment and performs approximate policy iteration using a function called LTSD$Q$ to compute the state-action value function during the policy evaluation step.
 
-The state-action value function $Q^\pi$ maps a state-action pair to a reward value, which means the optimal action $a$ for an agent in state $s$ is given by $\argmax\limits_a Q^\pi(s,a)$. LSTD$Q$ learns $\hat{Q}^\pi$, the least-squares fixed-point approximation to $Q^\pi$.
+The state-action value function $Q^\pi$ maps a state-action pair to a value reflecting its long-term utility. This means the optimal action $a$ for an agent in state $s$ is given by $\argmax\limits_a Q^\pi(s,a)$. LSTD$Q$ learns $\hat{Q}^\pi$, the least-squares fixed-point approximation to $Q^\pi$.
 
 LSPI uses a linear architecture for $\hat{Q}^\pi$, which means the values are approximated using a linear combination of $k$ basis functions, commonly referred to as features:
 
@@ -27,7 +28,7 @@ $\hat{Q}^\pi$  can now be expressed compactly:
 \[
     \hat{Q}^\pi = \Phi w^\pi
 \]
-where $w^\pi$ is a column vector with length k and $\Phi$ is a matrix of the form
+where $w^\pi$ is a column vector with length $k$ and $\Phi$ is a matrix of the form
 
 \[
     \Phi = \begin{pmatrix}
@@ -101,13 +102,13 @@ Because samples contribute additively an incremental update rule can be construc
 
 Using Equation \ref{eq:lspi:update}, an algorithm can be constructed to learn the weighted least-squares fixed-point approximation of $\hat{Q}^\pi$: LSTD$Q$. A nice feature of LSTD$Q$ is the lack of any restriction on how samples are collected. This means we can learn a policy from pre-existing samples, combine samples from multiple agents, or even take samples from user input.
 
-In terms of performance, LSTD$Q$ requires $O(k^2)$, where $k$ is the size of the basis. Note that it is independent of the size of the state-action space. Each update to the matrices $\hat{A}$ and $\hat{b}$ has a cost of $O(k^2)$ and a one-time cost of $O(k^3)$ is required to solve the system. We use an optimized version of LSTD$Q$ is also possible using the Sherman-Morrison formula for a recursive least-squares computation of the inverse \cite{lspi}. Let $B^{(t)}$ be the inverse of $\hat{A}^{(t)}$:
+In terms of performance, LSTD$Q$ requires $O(k^2)$, where $k$ is the size of the basis. Note that it is independent of the size of the state-action space. Each update to the matrices $\hat{A}$ and $\hat{b}$ has a cost of $O(k^2)$ and a one-time cost of $O(k^3)$ is required to solve the system. We use an optimized version of LSTD$Q$ which uses the Sherman-Morrison formula for a recursive least-squares computation of the inverse \cite{lspi}. Here we compute $B^{(t)}$ as the inverse of $\hat{A}^{(t)}$:
 
 \begin{equation}
 \label{eq:lspi}
     B^{(t)} = B^{(t-1)} - \frac{B^{(t-1)}\phi(s_t,a_t)\big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}}{1 + \big(\phi(s_t,a_t) - \gamma\phi(s_t',\pi(s_t'))\big)^TB^{(t-1)}\phi(s_t,a_t)}
 \end{equation}
-The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode for LSPI is shown in Algorithm \ref{alg:lspi} \cite{lspi}.
+The pseudocode for LSPI is shown in Algorithm \ref{alg:lspi} and the pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} \cite{lspi}.
 
 \begin{algorithm}
 \caption{LSPI}
@@ -160,7 +161,7 @@ The pseudocode for LSTD$Q$ is shown in Algorithm \ref{lstdq} and the pseudocode 
 
 \subsection{Massively Parallel Least-Squares Policy Iteration}
 
-We chose to focus on LSPI because LSTD$Q$ does not require any algorithmic changes in order to support a massively parallel implementation. This is because LSPI is expressed in terms of vector and matrix operations, which are already inherently parallelizable. However, this still requires implementation changes and leaves room for environment specific optimizations.
+We chose to focus on LSPI because LSTD$Q$ does not require any algorithmic changes in order to support a massively parallel implementation. This is because LSPI is expressed in terms of vector and matrix operations, which are parallelizable. However, this still requires implementation changes and leaves room for environment specific optimizations.
 
 Knowing that we wanted to demonstrate the capabilities of a GPU for massively parallel acceleration, the first decision was what API to use. We chose CUDA because our test machine uses an nVidia GPU and several colleagues have experience with CUDA programming.
 
@@ -188,8 +189,8 @@ The next step was translating LSPI into standardized linear algebra operations, 
             \STATE $x \leftarrow scal(x, -1)$ \COMMENT{Now $x = \phi(s,a) - \gamma\phi(s',\pi(s'))$}
             \STATE $y \leftarrow gemv(B, \phi(s,a))$
             \STATE $z \leftarrow gemv(x, B)$
-            \STATE $num \leftarrow ger(y, z)$ \COMMENT{Calculate the numerator, see \eqref{eq:lspi}}
-            \STATE $denom \leftarrow 1 + dot(\phi(s,a), z)$ \COMMENT{Calculate the denominator, see \eqref{eq:lspi}}
+            \STATE $num \leftarrow ger(y, z)$ \COMMENT{Calculate the numerator, see Equation \eqref{eq:lspi}}
+            \STATE $denom \leftarrow 1 + dot(\phi(s,a), z)$ \COMMENT{Calculate the denominator, see Equation \eqref{eq:lspi}}
             \STATE $\Delta B \leftarrow scal(num, \frac{1}{denom})$
             \STATE $B \leftarrow axpy(\Delta B, B, -1)$
             \STATE $\Delta b \leftarrow scal(\phi(s,a), r)$
@@ -215,11 +216,11 @@ The functions utilized for the BLAS implementation are as follows:
 
 Since all of the scalar values used are within BLAS function calls, no explicit management is necessary to pass this data to the GPU. However, matrix and vector values must have memory on the GPU explicitly allocated and copied from device memory. In our code we solved this problem by using the $thrust$ library, which handles this automatically \cite{thrust}.
 
-There are a few key portions of this algorithm which could require explicit functions written to perform on the GPU. The first is the initialization of $B$ which involves generating the identity matrix. As of the current version of CUDA, there is no library support for the identity matrix. The second is the computation of $\phi(s',\pi(s'))$ and $\phi(s,a)$ which may involve drawing data from the samples in a way that is not executed on the GPU. The third is the computation $\pi(s')$, which may compute the maximum of the values without the use of the GPU and also relies on the evaluation of the basis function for multiple state-action pairs.
+There are a few key portions of this algorithm which could benefit from custom functions to execute on the GPU. The first is the initialization of $B$ which involves generating the identity matrix by iterating over each element and determining the value. This could be optimized by writing a function which unrolls the loop and checks each element at the same time. The second is the computation of $\phi(s',\pi(s'))$ and $\phi(s,a)$ which may involve drawing data from the samples in a way that is not executed on the GPU. The third is the computation $\pi(s')$, which may compute the maximum of the values using the CPU and also relies on the evaluation of the basis function for multiple state-action pairs.
 
 We could write custom CUDA kernels to perform these operations on the GPU in a custom manner; however, using just the BLAS functions provides an easy way to switch between CPU and GPU libraries for comparison. In addition, any optimizations we perform would not impact the performance scaling, which is the key result we expect to improve with GPU acceleration. More discussion of optimization and its potential impact on our results can be found in Chapter \ref{chap:evaluation}.
 
-\subsection{Online Least-Squares Policy Iteration}
+\subsection{Semi-Online Least-Squares Policy Iteration}
 
 Offline learning techniques are typically used to process samples from an environment before an agent interacts with that environment. The limitation of these algorithms is that they cannot alter an agent's behavior while the agent is interacting in the environment. An online learning technique will usually be used if an agent's behavior needs to adapt dynamically to the environment. However, in a performance constrained environment it may not be feasible to perform the update step of an online reinforcement learning algorithm at every action selection.
 
@@ -228,7 +229,7 @@ We propose an algorithm which uses LSPI to process samples collected by an onlin
 To demonstrate this approach with LSPI, we present Algorithm \ref{alg:olspi}. The algorithm works by collecting samples from the agent in the environment and executing LSPI once a pre-defined number of samples has been collected. Each time this number of new samples is collected the entire batch of samples is passed in. The number of samples to collect before each iteration should be carefully controlled to ensure that even the first update step provides a noticeable benefit to the agent.
 
 \begin{algorithm}
-\caption{Online LSPI}
+\caption{Semi-Online LSPI}
 \label{alg:olspi}
     {\fontsize{12}{10}\selectfont
     \begin{algorithmic}[1]
@@ -269,7 +270,7 @@ The source code for Quake III is available on github under an open source licens
 
 The Quake III solution is separated into multiple projects representing different parts of the game engine and implementation; for our work we only modified the \emph{game}, \emph{botlib}, and \emph{server} projects, with most of the work occurring in the \emph{game} project. Modifications to \emph{botlib} were required to allow our bots to peek into the state of the environment without affecting it, which caused bugs when our bot checked the state of the environment more frequently than the native bots. The modifications to \emph{server} were only to facilitate the changes in \emph{botlib}.
 
-Recall from the background section that the Quake III AI is separated into four levels which are further broken into subsections. The \emph{botlib} provides the implementation for most of the lower two levels. The remaining logic is contained in the \emph{game} project, including the AI Network which guides actions at a high level. Our bot was implemented largely by supplanting the AI Network's finite state machine and allowing more frequent and flexible state transitions.
+Recall from Section \ref{chap:games:quake} that the Quake III AI is separated into four levels which are further broken into subsections. The \emph{botlib} provides the implementation for most of the lower two levels. The remaining logic is contained in the \emph{game} project, including the AI Network which guides actions at a high level. Our bot was implemented largely by supplanting the AI Network's finite state machine and allowing more frequent and flexible state transitions.
 
 \subsection{Understanding the AI Optimizations}
 
@@ -306,7 +307,7 @@ Rather than limiting the bots to executing only a single node in any given game 
 
 Each execution node is formatted in the same way, following the pattern described in Algorithm \ref{ainode}. Intermixed among these primary steps are key conditionals which check portions of the state to see if a transition is necessary. If a transition is deemed necessary prior to step $5$, the node will return \emph{false}.
 
-In order to utilize as much of node execution method as possible, our bot needed to do two things: skip any conditionals which could change state and execute any possible state changes when the first node is called each step. There are some exceptions to this rule required to maintain proper bot behavior. For example, there is a node called \emph{seek activate entity} which is used to open doors by shooting buttons. We did not want to modify this code as it could fundamentally break the bot's ability to navigate the map.
+In order to use as much of the node execution method as possible, our bot needed to do two things: skip any conditionals which could change state and execute any possible state changes when the first node is called each step. There are some exceptions to this rule required to maintain proper bot behavior. For example, there is a node called \emph{seek activate entity} which is used to open doors by shooting buttons. We did not want to modify this code as it could fundamentally break the bot's ability to navigate the map.
 
 \begin{algorithm}
 \caption{Modified Node Execution Method}
@@ -335,7 +336,7 @@ To achieve these goals we added a new flag called \emph{bottype} to the bot's pe
 
 \subsection{Actions and Goals}
 
-As our code was utilizing the AI Network's finite state machine, our code was also limited by the actions available in this state machine. The finite state machine contains twelve nodes total; however, half of the nodes are maintained for special scenarios including bot death and match intermissions. As a result there are only six nodes available, each of which maps to an action available to our agent. The resulting actions are as follows:
+As our code was using the AI Network's finite state machine, our code was also limited by the actions available in this state machine. The finite state machine contains twelve nodes total; however, half of the nodes are maintained for special scenarios including bot death and match intermissions. As a result there are only six nodes available, each of which maps to an action available to our agent. The resulting actions are as follows:
 
 \begin{itemize}
     \item \emph{Seek Long-term Goal} - Selects an item or location across the entire map and attempts to reach that goal. After an extended period of time has passed the bot will re-evaluate its goal.
