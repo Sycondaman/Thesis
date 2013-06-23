@@ -28,6 +28,16 @@ To evaluate the viability of our Quake III bot implementation we measured the cu
 \label{tab:reward}
 \end{table}
 
+All of the basis functions we selected were composed of \emph{actions} and \emph{features}. The number of actions was fixed at $6$ and all feature sets included one constant value of $1$. The smallest basis included only $4$ features observed in the environment: \emph{health}, \emph{armor}, \emph{enemy}, and \emph{enemy distance}. Health and armor were simply described as integer values and taken directly from the state of the agent. The value for enemy was $1$ if an enemy was present and $-1$ otherwise. Enemy distance was the straight line distance between the agent and enemy's origins.
+
+For the larger basis functions we turned health into the sum of multiple binary values, each of which represented a health range. When the agent's health fell into a given range the value of that feature was $1$, otherwise it was $0$. In addition, we added a feature for health beyond the normal maximum as it would decay, unlike normal health. We followed the same pattern for extra armor, but we instead of breaking armor into regions we simply changed the value to a percentage of total armor available.
+
+Enemy distance was also changed into a summation of binary features representing a very close enemy, a near enemy, and a far away enemy. We also included binary features describing whether the enemy was seen shooting or was known to be invisible. Features were added for each potential weapon. If the agent had ammo for a given weapon that feature would equal the amount of ammo the agent carried.
+
+Each powerup in the game was given a feature, with the value specifying the number of seconds of the powerup remaining. To reach the largest basis size we added information on map area numbers, which included binary features specifying whether the enemy, current goal, and agent were both within the same pre-defined map area.
+
+The training samples were collected from a native bot in a match against an identical native bot. We observed that our LSPI agent was able to develop a winning policy with as few as 10,000 samples. While more samples does improve the agent's policy, more than 90,000 samples does not appear to have an effect. We also observed that increasing the basis size had a varied impact. Agents with basis sizes of $114$ and $174$ demonstrated converging policies with fewer samples but agents with larger basis sizes generated worse policies with the largest basis size losing its match. This effect is likely due to a combination of overfitting and the inherent need for more sample data to optimize a larger set of weights.
+
 \section{Performance Scaling}
 
 The performance of the GPU on tasks which benefit from parallel processing is not always better than the CPU. Remember that the GPU processes single threads slower than the CPU and is constrained by memory operations. As a result, the GPU shows its greatest performance gains as the size of the input scales. In fact, current generation GPUs hit peak performance for matrix operations when the matrix dimensions are close to $1024 \times 1024$ \cite{cuda:perf}. With that in mind we ran experiments to demonstrate the impact of this on LSPI as the size of the input scales.
