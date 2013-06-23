@@ -37,35 +37,35 @@ where $w^\pi$ is a column vector with length $k$ and $\Phi$ is a matrix of the f
 \]
 Each row of $\Phi$ represents the basis function values for a specific state-action pair. The basis functions are required to be linearly independent in LSPI which also means the columns of $\Phi$ are linearly independent.
 
-To find $\hat{Q}^\pi$, we force it to be a fixed point under $T_\pi$, the Bellman operator:
+To find $\hat{Q}^*$, the approximation of $Q^\pi$ for the optimal policy, we force it to be a fixed point under $T_\pi$, the Bellman operator:
 \[
-    \hat{Q}^\pi \approx T_\pi\hat{Q}^\pi
+    \hat{Q}^* \approx T_*\hat{Q}^*
 \]
-The Bellman operator is defined such that successive applications of $T_\pi$ to any initial vector $Q$ will converge on the state-action value function $Q^\pi$ \cite{lspi}. To ensure this is true we must project $T_\pi\hat{Q}^\pi$ to a point in the space spanned by the basis functions:
+The Bellman operator is defined such that successive applications of $T_*$ to any initial vector $Q$ will converge on the state-action value function $Q^*$ \cite{lspi}. To ensure this is true we must project $T_*\hat{Q}^*$ to a point in the space spanned by the basis functions:
 
 \[
-    \hat{Q}^\pi = \Phi(\Phi^T\Phi)^{-1}\Phi^T(R + \gamma \mathcal{P}\Pi_\pi\hat{Q}^\pi)
+    \hat{Q}^* = \Phi(\Phi^T\Phi)^{-1}\Phi^T(R + \gamma \mathcal{P}\Pi_*\hat{Q}^*)
 \]
-The matrix $\Pi_\pi$ describes policy $\pi$ such that $\Pi_\pi(s',(s',a')) = \phi(s',a')w^\pi$. From this formula we can derive the desired solution:
+The matrix $\Pi_*$ describes policy $\pi^*$ such that $\Pi_*(s',(s',a'))$ is the probability that $\pi^*$ chooses action $a'$ while in state $s'$. From this formula we can derive the desired solution:
 \[
-    \Phi^T(\Phi - \gamma \mathcal{P}\Pi_\pi\Phi)w^\pi = \Phi^TR
+    \Phi^T(\Phi - \gamma \mathcal{P}\Pi_*\Phi)w^* = \Phi^TR
 \]
 
-Assuming there are $k$ linearly independent basis functions, learning $\hat{Q}^\pi$ is equivalent to learning the weights $w^\pi$ of $\hat{Q}^\pi = \Phi w^\pi$. The exact values can be computed by solving the linear system
+Assuming there are $k$ linearly independent basis functions, learning $\hat{Q}^*$ is equivalent to learning the weights $w^*$ of $\hat{Q}^* = \Phi w^*$. The exact values can be computed by solving the linear system
 
 \begin{equation}
-    Aw^\pi = b
+    Aw^* = b
 \end{equation}
 where
 
 \[
     \begin{array}{rcl}
-        A &=& \Phi^T(\Phi - \gamma P\Pi_\pi\Phi) \\
+        A &=& \Phi^T(\Phi - \gamma P\Pi_*\Phi) \\
         b &=& \Phi^T\mathcal{R}
     \end{array}
 \]
 
-$A$ and $b$ can be learned using samples and the learned linear system can be solved for $\tilde{w}^\pi$. The equations for $A$ and $b$ can be reduced until it is clear that $A$ is the sum of many rank one matrices of the form:
+$A$ and $b$ can be learned using samples and the learned linear system can be solved for $\tilde{w}^*$. The equations for $A$ and $b$ can be reduced until it is clear that $A$ is the sum of many rank one matrices of the form:
 
 \[
     \phi(s,a)(\phi(s,a) - \gamma\phi(s',\pi(s')))^T
