@@ -3,6 +3,31 @@
 
 We test several hypotheses in order to provide a thorough comparison of CPU versus GPU processing as well as online versus offline learning. This chapter contains detailed explanations of each experiment we ran, including why we ran the experiment, the environment setup, and a discussion of the results.
 
+\section{Agent Reward}
+
+To evaluate the viability of our Quake III bot implementation we measured the cumulative reward of each test scenario. A summary of the data we collected is available in Table \ref{tab:reward}. The table tracks the average reward per action for the LSPI agent under different configurations. All of the tests were completed by evaluating our agent against a native bot in a deathmatch to $50$. Every test used the same map, difficulty setting, and bots. The same discount factor of $0.95$ was used for all tests.
+
+\begin{table}%
+    \centering
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        Basis Size & Training Samples & Total Reward & Enemy Reward & Reward per Action \\ \hline
+        \hline 
+        30 & 30k & 166.45 & -42.93 & $7.69 \times 10^{-3}$ \\ \hline
+        30 & 60k & 114.09 & -79.08 & $9.42 \times 10^{-3}$ \\ \hline
+        30 & 90k & 222.30 & -131.22 & $2.44 \times 10^{-2}$ \\ \hline
+        30 & 120k & 196.42 & -126.95 & $2.09 \times 10^{-2}$ \\ \hline
+        30 & 150k & 189.81 & -120.60 & $2.27 \times 10^{-2}$ \\ \hline
+        114 & 10k & 186.96 & -115.08 & $1.34 \times 10^{-2}$ \\ \hline
+        174 & 10k & 160.97 & -106.76 & $1.36 \times 10^{-2}$ \\ \hline
+        216 & 10k & 123.45 & 79.95 & $4.02 \times 10^{-3}$ \\ \hline
+        258 & 10k & -63.88 & 116.65 & $-3.42 \times 10^{-3}$ \\
+        \hline
+    \end{tabular}
+\caption{Average reward per action for LSPI bot.}
+\label{tab:reward}
+\end{table}
+
 \section{Performance Scaling}
 
 The performance of the GPU on tasks which benefit from parallel processing is not always better than the CPU. Remember that the GPU processes single threads slower than the CPU and is constrained by memory operations. As a result, the GPU shows its greatest performance gains as the size of the input scales. In fact, current generation GPUs hit peak performance for matrix operations when the matrix dimensions are close to $1024 \times 1024$ \cite{cuda:perf}. With that in mind we ran experiments to demonstrate the impact of this on LSPI as the size of the input scales.
@@ -42,13 +67,53 @@ It is important to keep in mind that the point at which the GPU overtakes the CP
 
 In our experiments we were able to generate very good policies with a very small basis function; however, this is largely due to the amount of hand written scripts our bot relies on to interact with the environment. While this allowed us to test the performance of LSPI under different conditions very well, our AI implementation does not do allow more complex behavior to be learned, limiting the benefits observed using reinforcement learning.
 
-To understand the benefits of a large basis function, consider designing an AI agent for Quake III from the ground up. In order to manage the complexity of the environment, it is helpful to have some basic actions available to the agent: \emph{attack}, \emph{get health}, \emph{get weapon}, \emph{get armor}, \emph{get powerup}, \emph{search for enemy}, \emph{defend location}, \emph{flee from enemy}, \emph{change weapon}, \emph{reload}. Already our agent has more actions available than the implementation was used for testing.
+To intuitively understand the benefits of a large basis function, consider designing an AI agent for Quake III from the ground up. In order to manage the complexity of the environment, it is helpful to have some basic actions available to the agent: \emph{attack}, \emph{get health}, \emph{get weapon}, \emph{get armor}, \emph{get powerup}, \emph{search for enemy}, \emph{defend location}, \emph{flee from enemy}, \emph{change weapon}, \emph{reload}. Already our agent has more actions available than the implementation was used for testing.
 
-Now that we have defined some actions for our agent, consider what information would be useful in order to make intelligent decisions. First and foremost, the agent needs information on its own state: \emph{health}, \emph{armor}, \emph{equipped weapon}, \emph{available weapons}, \emph{equipped ammo}, \emph{available ammo}. Keep in mind that some of these features, such as equipped weapon and available weapons, would need to be represented by multiple values in the basis. In fact, representing this information in Quake III would already result in a basis with $23$ values which must be repeated for each of the $10$ actions we have defined for a total size of $230$, and we still lack the information to make more complex decisions such as how to choose an area to defend.
+Now consider what information would be useful in order to make intelligent decisions. First and foremost, the agent needs information on its own state: \emph{health}, \emph{armor}, \emph{equipped weapon}, \emph{available weapons}, \emph{equipped ammo}, \emph{available ammo}. Keep in mind that some of these features, such as equipped weapon and available weapons, would need to be represented by multiple values in the basis. In fact, representing this information in Quake III would already result in a basis with $23$ values which must be repeated for each of the $10$ actions we have defined for a total size of $230$, and we still lack the information to make more complex decisions such as how to choose an area to defend.
 
-The basis size can be made smaller by carefully controlling the basic actions available to the bot and carefully selecting features; however, the key result of this experiment is demonstrating that the advent of GPU acceleration enables an AI designer more control over selecting features and actions for an agent without suffering the significant performance degradation present with CPU based algorithms as the basis size increases.
+\subsection{Impact of Increasing Basis Size}
+
+To empirically demonstrate the impact of increasing the basis size we used an LSPI agent to solve the \emph{inverted pendulum} problem. The problem requires an agent to balance an inverted pendulum attached to a cart by applying one of three actions: left force (-75 Newtons), right force (75 Newtons), or no force (0 Newtons). All actions have noise added uniformly from $-10$ to $10$. The state space is continuous and composed of the vertical angle $\theta$ and the angular velocity $\dot{\theta}$ of the pendulum. The transitions are governed by the following equation \cite{lspi}:
+
+\begin{equation}
+    \ddot{\theta} = \frac{g sin(\theta) 0 \alpha ml(\dot{\theta})^2 sin(2\theta)/2 - \alpha cos(\theta)u}{4l/3 - \alpha ml cos^2(\theta)}
+\label{eq:pendulum}
+\end{equation}
+where $g$ represents the gravity constant, $m$ is the pendulum mass, $M$ is the cart mass, $l$ is the pendulum length, $\alpha = 1/(m + M)$, and $u$ is the noisy input. The simulation steps every 0.1 seconds, selecting the agent's action at the beginning of the step and keeping it constant until the next action is selected. If $|\theta| \geq \pi/2$ the pendulum is considered horizontal and receives a reward of $-1$, otherwise the agent receives a reward of 0.
+
+For our test we used the following values:
+\[
+    \begin{aligned}
+        g &= 29.4 m/s^2 \\
+        m &= 2.0 kg \\
+        M &= 8.0 kg \\
+        l &= 3.0 m
+    \end{aligned}
+\]
+and a discount factor of 0.95. The basis function was created by generating $N$ Gaussian functions arranged over the 2-dimensional state space and including a constant factor of $1$. For state $s = (\theta,\dot{\theta})$ and some action $a$, all values are $0$ except for the active block for $a$ which is represented by:
+\[
+    \big(1, e^{-\frac{||s - \mu_1||^2}{2\sigma^2}}, e^{-\frac{||s - \mu_2||^2}{2\sigma^2}}, \dots, e^{-\frac{||s - \mu_N||^2}{2\sigma^2}}\big)^T
+\]
+where $\mu_i$ represents a point in the space $\theta \times \dot{\theta}$ and $\sigma^2 = 1$. Specifically, the values for $\mu$ were selected by choosing $N$ uniformly spaced discrete pairs $(\theta, \dot{\theta})$ such that $\theta \in [-\pi/2, \pi/2]$ and $\dot{\theta} \in [-1, 1]$. 
+
+Training samples were collected from random episodes: the pendulum started at a position near $(0,0)$ and the agent selected actions at random. The average length of each episode was 16, generating about 16 samples. Figure \ref{fig:pendulum} shows the performance of policies created for varying number of training episodes.
+
+\begin{figure}
+	\centering
+		\includegraphics[width=0.33\paperheight]{Balance_vs_Samples.png}
+	\label{fig:pendulum}
+    \caption{LSPI Inverted Pendulum: Average balancing time}
+\end{figure}
+
+If the agent balances for $300$ seconds the episode comes to an end as it is likely the agent has developed an optimal policy. For each basis size we increased the number of training episodes by $500$ until two perfect results were achieved. The smallest basis was tested up $6.5$k training samples before we skipped to $10$k and then $15$k (not shown). None of these tests showed any significant improvement so we discontinued testing.
+
+The numbers in the legend of Figure \ref{fig:pendulum} lists the basis size in terms of the number of discrete values for $\theta$ and $\dot{\theta}$ selected from. For example the smallest basis size was created by selecting points from $\{-\pi/2, 0, \pi/2\} \times \{-1, 0, 1\}$.
+
+The experiment results demonstrate that the size of the basis function can have an impact on two important convergence factors. First, the smallest basis function did not contain enough information to converge on an optimal solution, suggesting that a larger basis function may be required in order to implement an effective agent. Second, the largest basis function needed fewer samples to converge when compared to the medium basis function. In some environment this may provide a performance benefit while in others it is desirable because the agent can learn effective policies with less training time.
 
 \section{Online LSPI}
+
+The algorithm for Online LSPI is described in \ref{chap:implementation}. To evaluate its effectiveness as an alternative to traditional online algorithms we implemented OLPOMDP and Online LSPI in the Quake III environment and compared their performance and effectiveness.
 
 \subsection{Policy Gradient}
 
@@ -108,4 +173,39 @@ The pseudocode for OLPOMDP is given in Algorithm \ref{olpomdp}. Notice that inst
     }
 \end{algorithm}
 
-\section{Bot Reward}
+\subsection{Evaluation of Online Algorithms}
+
+For the purpose of comparison both agents were tested using GPU acceleration in identically configured Quake III matches. All bots were given the personality of \emph{Ranger} to ensure no bots, including the Quake III bots, had any unfair advantages in physical characteristics. We evaluated the performance of each agent in a deathmatch against a native bot with no time limit and a 500 kill limit. The difficulty was set to \emph{Bring It On}, the second lowest difficulty level. This provided us the benefit of creating a high contrast between good and bad policies due to the impact on scripted bot behavior. The Online LSPI agent used a discount rate of $0.95$ and an exploration rate of $0.25$. The OLPOMDP agent used $\beta = 0.80$ and a step size of $0.05$.
+
+\begin{figure}
+		\includegraphics[width=0.5\textwidth]{OLPOMDP_Reward_vs_Time.png}
+        \includegraphics[width=0.5\textwidth]{LSPI_Reward_vs_Time.png}
+	\label{fig:online:reward}
+    \caption{Online Agent Reward}
+\end{figure}
+
+The result of the matches is displayed in Figure \ref{fig:online:reward}. Both the Online LSPI and OLPOMDP agents were able to win when placed against the native bot. In both matches our agents scored approximately twice as many kills as the native bots. While the end result was the same, a few differences are noticeable in the reward graphs. The LSPI agent appeared to start with a better policy, although the OLPOMDP agent was quickly able to overcome this advantage and finish the match with a reward of $1316$ as compared to the LSPI agent with $1286$. In addition, OLPOMDP demonstrated a more stable average reward with the policy changes in LSPI appearing to cause some reward loss. Overall, however, both algorithms performed on par and achieved nearly the same end result.
+
+\begin{figure}
+	\centering
+		\includegraphics[height=0.33\paperheight]{Action_Selection_Time.png}
+	\caption{Average time required to select an action.}
+	\label{fig:action:selection}
+\end{figure}
+
+Figure \ref{fig:action:selection} shows the average time required to select an action for each agent across the small, medium, and large basis sizes. The values for LSPI and OLPOMDP were selected by tracking the amount of time each action selection operation took over the course of a deathmatch to $50$. The value for Online LSPI was taken from the experiment demonstrated in Figure \ref{fig:online:reward}. For clarity the values for OLPOMDP were split into the update and action selection steps.
+
+We observed that Online LSPI does not appear to suffer any performance loss due to the background updates. To understand this result, recall that GPU operations are generally bound by memory operations. In order to reduce the impact of delays waiting for memory operations to complete the hardware is optimized for fast context switching, allowing multiple programs or operations to interleave rapidly \cite{gpgpu}. 
+
+Because we did not optimize our code to minimize the delay in memory, we do not appear to lose performance when we add simultaneous operations. Note, however, that if we were to optimize all operations it is possible that LSPI would begin to perform better as we approach the GPU's throughput limit. It is also possible that the exploration policy improved performance because the basis function does not need to be computed when a random action is selected.
+
+We observed approximately a factor of 4 speedup when using Online LSPI over OLPOMDP. OLPOMDP appears to be dominated by the update step which consistently takes longer than just selecting an action; however, action selection also takes slightly longer due to the requirement to generate random numbers to follow the probabilistic policy.
+
+\begin{figure}
+	\centering
+		\includegraphics[height=0.33\paperheight]{Online_Time_vs_Samples.png}
+	\caption{Time to analyze samples in Online LSPI.}
+	\label{fig:online:samples}
+\end{figure}
+
+The results in Figure \ref{fig:online:samples} demonstrate the scaling of analysis as samples are collected in Online LSPI. We chose not to directly include the results from \ref{fig:samples}, as they cannot be directly compared. For the tests in samples scaling the samples included the time to load the samples from a file, but in this test the samples were already in memory. Despite this disparity, our test clearly demonstrates no significant performance loss when running online with a speed improvement of $20\%$ over our previous tests and approximately the same scaling factor. Accounting for the file operations it appears that our experiment performed almost identically in online and offline mode. It is worth noting that in a more taxing graphical environment less computing power would be available and we would expect to start seeing performance losses.
