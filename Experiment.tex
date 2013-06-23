@@ -218,7 +218,7 @@ We observed that Online LSPI does not appear to suffer any performance loss due 
 
 Because we did not optimize our code to minimize the delay in memory, we do not appear to lose performance when we add simultaneous operations. Note, however, that if we were to optimize all operations it is possible that LSPI would begin to perform better as we approach the GPU's throughput limit. It is also possible that the exploration policy for Semi-Online LSPI improved performance over LSPI because the basis function does not need to be computed when a random action is selected.
 
-We observed approximately a factor of 4 speedup when using Online LSPI over OLPOMDP. OLPOMDP appears to be dominated by the update step which consistently takes longer than just selecting an action; however, action selection also takes slightly longer due to the requirement to generate random numbers to follow the probabilistic policy.
+We observed approximately a factor of 4 speedup when using Online LSPI over OLPOMDP. OLPOMDP appears to be dominated by the update step, which consistently takes longer than just selecting an action; however, action selection also takes slightly longer due to the requirement to generate random numbers to follow the probabilistic policy.
 
 \begin{figure}
 	\centering

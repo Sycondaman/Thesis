@@ -16,7 +16,7 @@ LSPI uses a linear architecture for $\hat{Q}^\pi$, which means the values are ap
     \hat{Q}^\pi(s,a;w) = \sum_{j=1}^k \phi_j(s,a)w_j
 \]
 
-In this formula, $\phi(s,a)$ is a fixed function of $s$ and $a$ and $w_j$ represents the weight for $\phi_j$. We can represent $\phi(s,a)$ as a column vector with an entry for each basis function:
+In this formula, $\phi(s,a)$ is a fixed function of $s$ and $a$, and $w_j$ represents the weight for $\phi_j$. We can represent $\phi(s,a)$ as a column vector with an entry for each basis function:
 
 \[
     \phi(s,a) = \begin{pmatrix}
@@ -348,7 +348,7 @@ As our code was using the AI Network's finite state machine, our code was also l
 \end{itemize}
 Note that all of the actions prefixed \emph{Battle} are only valid if there is an enemy, and any actions without this prefix are only valid if there is no enemy.
 
-As far as goal selection and seeking is concerned, our bots do not entirely follow the same rules as the native bots. In the default Quake III source code, attempting to find a nearby goal automatically updates the bot's goal state. In addition to this, selecting a goal creates sets a value referred to as an \emph{avoid timeout}. This value specifies a period of time during which the bot should ignore that goal, which means that any further searches before the timeout expires will skip that goal. 
+As far as goal selection and seeking is concerned, our bots do not entirely follow the same rules as the native bots. In the default Quake III source code, attempting to find a nearby goal automatically updates the bot's goal state. In addition to this, selecting a goal sets a value referred to as an \emph{avoid timeout}. This value specifies a period of time during which the bot should ignore that goal, which means that any further searches before the timeout expires will skip that goal. 
 
 Since our bot searches for goals every step, we had to modify the code to pass in a parameter specifying if we were trying to peek without changing the state. However, even this was not complete enough since the node \emph{seek nearby goal} does not actually search for nearby goals. As a result we had to modify the code to pick a nearby goal whenever attempting to transfer into that state. In addition, since the bots do not actually detect whether an item is present and we do not share the avoid scheme of the native bots, we modified the bots to add an avoid timeout to any item which they were potentially touching. The end result should be equivalent to the native bots; however, we did notice a few minor bugs where the bot ran out of available goals. Luckily this happens infrequently, is handled gracefully by the game (by resetting avoid timers), and is avoided by good policies.
 
