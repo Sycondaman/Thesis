@@ -1,7 +1,7 @@
 \chapter{Background}
 \label{chap:background}
 
-In this chapter we provide some background on the MDP framework, which is the representation of the problem used by our algorithms to obtain agent policies. We then describe reinforcement learning and the basic policy iteration algorithm, followed by a discussion of GPU architectures and general purpose programming on the GPU.
+In this chapter we provide some background on the MDP framework, which is the representation of the problem used by our algorithms to obtain policies. We then describe reinforcement learning and the basic policy iteration algorithm, followed by a discussion of GPU architectures and general purpose programming on the GPU.
 
 \section{Markov Decision Process}
 
@@ -103,9 +103,9 @@ Due to the nature of computer graphics, GPUs were designed to focus on paralleli
 
 GPUs require the same basic architecture as the CPU: a fetch and decode unit, an execution unit, and registers. Using this simple design does not provide the same throughput per stream as the more advanced CPU design, but it allows more processing cores to be included on the same chip to support many parallel streams. However, just as the CPU design became optimized for single streams, the GPU design was optimized for multiple streams.
 
-Suppose we use an image editing program to change the hue of a picture with dimensions of 1280x1024. This picture has 1,310,720 individual pixels, each of which must be processed using the same linear transform. With a single core CPU this operation would need to be repeated for each of these pixels. If we use a GPU with 32 processing cores we could reduce the number of operations required to 40960.
+Suppose we use an image editing program to change the hue of a picture with dimensions of 1280x1024. This picture has 1,310,720 individual pixels, each of which must be processed using the same linear transform. With a single core CPU this operation would need to be repeated for each of these pixels. If we use a GPU with 32 processing cores we could reduce the number of steps required to 40960.
 
-Reducing the operations by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization, demonstrated in Figure \ref{fig:simd} is called single instruction, multiple data (SIMD) processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
+Reducing the steps by using 32 processing cores is helpful, but would still be a slow process, particularly for more complicated transformations. Luckily, the GPU can optimize this operation further by taking advantage of the fact that each pixel is undergoing the same instructions. This optimization, demonstrated in Figure \ref{fig:simd} is called single instruction, multiple data (SIMD) processing. Rather than using a fetch and decode unit for every instruction stream, multiple registers and execution units share the same fetch and decode unit.
 
 \begin{figure}
     \centering
