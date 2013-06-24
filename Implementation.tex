@@ -37,7 +37,7 @@ where $w^\pi$ is a column vector with length $k$ and $\Phi$ is a matrix of the f
 \]
 Each row of $\Phi$ represents the basis function values for a specific state-action pair. The basis functions are required to be linearly independent in LSPI which also means the columns of $\Phi$ are linearly independent.
 
-To find $\hat{Q}^*$, the approximation of $Q^\pi$ for the optimal policy, we force it to be a fixed point under $T_\pi$, the Bellman operator:
+To find $\hat{Q}^*$, the approximation of $Q^\pi$ for the optimal policy, we force it to be a fixed point under $T_*$, the Bellman operator:
 \[
     \hat{Q}^* \approx T_*\hat{Q}^*
 \]
@@ -253,7 +253,9 @@ To demonstrate this approach with LSPI, we present Algorithm \ref{alg:olspi}. Th
                 \STATE Select action $a$, with exploration rate $\alpha$
                 \STATE Observe the reward $r$
                 \STATE Observe the final state $s'$
-                \STATE Append $(s,a,r,s')$ to $D$
+                \IF{$a$ was selected by exploration}
+                    \STATE Append $(s,a,r,s')$ to $D$
+                \ENDIF
             \ENDFOR
             
             \STATE CreateThread($w \leftarrow LSPI(D, k, \phi, \gamma, \epsilon, w)$)
