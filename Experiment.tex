@@ -105,7 +105,7 @@ Now consider what information would be useful in order to make intelligent decis
 To empirically demonstrate the impact of increasing the basis size we used an LSPI agent to solve the \emph{inverted pendulum} problem. The problem requires an agent to balance an inverted pendulum attached to a cart by applying one of three actions: left force (-75 Newtons), right force (75 Newtons), or no force (0 Newtons). All actions have noise added uniformly from $-10$ to $10$. The state space is continuous and composed of the vertical angle $\theta$ and the angular velocity $\dot{\theta}$ of the pendulum. The transitions are governed by the following equation \cite{lspi}:
 
 \begin{equation}
-    \ddot{\theta} = \frac{g sin(\theta) 0 \alpha ml(\dot{\theta})^2 sin(2\theta)/2 - \alpha cos(\theta)u}{4l/3 - \alpha ml cos^2(\theta)}
+    \ddot{\theta} = \frac{g sin(\theta) - \alpha ml(\dot{\theta})^2 sin(2\theta)/2 - \alpha cos(\theta)u}{4l/3 - \alpha ml cos^2(\theta)}
 \label{eq:pendulum}
 \end{equation}
 where $g$ represents the gravity constant, $m$ is the pendulum mass, $M$ is the cart mass, $l$ is the pendulum length, $\alpha = 1/(m + M)$, and $u$ is the noisy input. The simulation steps every 0.1 seconds, selecting the agent's action at the beginning of the step and keeping it constant until the next action is selected. If $|\theta| \geq \pi/2$ the pendulum is considered horizontal and receives a reward of $-1$, otherwise the agent receives a reward of 0.
