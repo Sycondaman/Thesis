@@ -7,7 +7,7 @@ We test several hypotheses in order to provide a thorough comparison of CPU vers
 
 To evaluate the viability of our Quake III bot implementation we measured the cumulative reward of each test scenario. We executed these tests using GPU acceleration, but this does not impact results because the policies generated on the CPU and GPU are equivalent. All training samples were collected from a native bot in a match against an identical native bot. The difficulty was set to $Bring It On$ for all matches.
 
-A summary of the data we collected is available in Table \ref{tab:reward}. The table tracks the average reward per action for the LSPI agent under different configurations. All of the tests were completed by evaluating our agent against a native bot in a deathmatch to $50$. Every test used the same map, difficulty setting, and bots. The same discount factor of $0.95$ was used for all tests.
+A summary of the data we collected is available in Table \ref{tab:reward}. The table tracks the average reward per action for the LSPI agent under different configurations. All of the tests were completed by evaluating our agent against a native bot in a deathmatch to $50$. Every test used the same map, difficulty setting, and bots. The same discount factor of $0.95$ was used for all tests. All results shown are computed from the average of three runs, with the exception of the size 258 basis function.
 
 \begin{table}%
     \centering
@@ -15,14 +15,14 @@ A summary of the data we collected is available in Table \ref{tab:reward}. The t
         \hline
         Basis Size & Training Samples & Total Reward & Enemy Reward & Reward per Action \\ \hline
         \hline 
-        30 & 30k & 166.45 & -42.93 & $7.69 \times 10^{-3}$ \\ \hline
-        30 & 60k & 114.09 & -79.08 & $9.42 \times 10^{-3}$ \\ \hline
-        30 & 90k & 222.30 & -131.22 & $2.44 \times 10^{-2}$ \\ \hline
-        30 & 120k & 196.42 & -126.95 & $2.09 \times 10^{-2}$ \\ \hline
-        30 & 150k & 189.81 & -120.60 & $2.27 \times 10^{-2}$ \\ \hline
-        114 & 10k & 186.96 & -115.08 & $1.34 \times 10^{-2}$ \\ \hline
-        174 & 10k & 160.97 & -106.76 & $1.36 \times 10^{-2}$ \\ \hline
-        216 & 10k & 123.45 & 79.95 & $4.02 \times 10^{-3}$ \\ \hline
+        30 & 30k & 177.97 & -87.98 & $1.03 \times 10^{-2}$ \\ \hline
+        30 & 60k & 161.74 & -83.67 & $1.24 \times 10^{-2}$ \\ \hline
+        30 & 90k & 200.50 & -123.09 & $2.10 \times 10^{-2}$ \\ \hline
+        30 & 120k & 185.48 & -118.70 & $2.14 \times 10^{-2}$ \\ \hline
+        30 & 150k & 189.94 & -119.01 & $7.41 \times 10^{-2}$ \\ \hline
+        114 & 10k & 186.97 & -115.36 & $1.29 \times 10^{-2}$ \\ \hline
+        174 & 10k & 151.34 & -65.98 & $1.14 \times 10^{-2}$ \\ \hline
+        216 & 10k & 146.87 & 60.91 & $4.89 \times 10^{-3}$ \\ \hline
         258 & 10k & -63.88 & 116.65 & $-3.42 \times 10^{-3}$ \\
         \hline
     \end{tabular}
