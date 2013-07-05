@@ -727,14 +727,15 @@
 
 
 \newcommand{\committeeapprovalpage}{
+  \newgeometry{margin=1.0in}
   \begin{titlepage}
     {\centering 
 	\bf{CASE WESTERN RESERVE UNIVERSITY\\SCHOOL OF GRADUATE STUDIES} \\[\@thesistitlebigskip]  }
 
-    \indent We hereby approve the thesis of \\
+    \indent \indent We hereby approve the thesis of \\
     
 	\begin{center}
-		\begin{tabular}{lp{0.6\linewidth}l}
+		\begin{tabular}{lp{0.4\linewidth}l}
 		 \multicolumn{3}{c}  {\large {\@author}} \tabularnewline
 		\hline
 		& \tabularnewline
@@ -743,7 +744,7 @@
     		\end{tabular}
 
 
-    		\begin{tabular}{p{0.1\linewidth}p{0.4\linewidth}p{0.4\linewidth}}
+    		\begin{tabular}{p{0.09\textwidth}p{0.25\textwidth}p{0.25\textwidth}}
 		(signed) & \multicolumn{2}{c} {\large {\@committeechair}} \tabularnewline
 		\cline{2-3}
 			& \multicolumn{2}{c} {\small (chair of the committee)}  \tabularnewline
@@ -767,6 +768,7 @@
     		\end{tabular}
 	\end{center}
   \end{titlepage}
+  \restoregeometry
 }
 
 %=============================================================================
